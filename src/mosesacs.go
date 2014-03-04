@@ -8,6 +8,8 @@ import (
 //	"strings"
 	"encoding/xml"
 	"os"
+	"code.google.com/p/go.net/websocket"
+//	"io"
 )
 
 type SoapEnvelope struct {
@@ -98,8 +100,48 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func echoHandler(ws *websocket.Conn) {
+	msg := make([]byte, 512)
+
+	for {
+		n, err := ws.Read(msg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Receive: %s\n", msg[:n])
+
+		m, err := ws.Write(msg[:n])
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Send: %s\n", msg[:m])
+	}
+}
+
+func EchoServer(ws *websocket.Conn) {
+	msg := make([]byte, 512)
+	n, err := ws.Read(msg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Receive: %s\n", msg[:n])
+	ws.Write(msg[:n])
+//	io.Copy(ws, ws)
+}
+
+//func WebSocketServer() {
+//
+//	// This example demonstrates a trivial echo server.
+//	http.Handle("/echo", websocket.Handler(EchoServer))
+//	err := http.ListenAndServe(":12345", nil)
+//	if err != nil {
+//		panic("ListenAndServe: " + err.Error())
+//	}
+//}
+
 func main() {
 	http.HandleFunc("/acs", handler)
+	http.Handle("/ws", websocket.Handler(echoHandler))
 	fmt.Println("Serving on 9090")
 	err := http.ListenAndServe(":9090", nil)
 	if err != nil {
