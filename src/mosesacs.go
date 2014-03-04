@@ -10,6 +10,7 @@ import (
 	"os"
 	"code.google.com/p/go.net/websocket"
 //	"io"
+	"flag"
 )
 
 type SoapEnvelope struct {
@@ -41,6 +42,23 @@ type Event struct {
 
 }
 
+
+type Message struct {
+	SerialNumber string
+	Message	string
+}
+
+type CPE struct {
+	SerialNumber string
+	Manufacturer string
+	OUI string
+	ConnectionRequestURL string
+	SoftwareVersion string
+	ExternalIPAddress string
+	State string
+}
+
+var cpes  map[string]CPE
 
 func informResponse() string {
 	return `<?xml version="1.0" encoding="UTF-8"?>
@@ -129,21 +147,20 @@ func EchoServer(ws *websocket.Conn) {
 //	io.Copy(ws, ws)
 }
 
-//func WebSocketServer() {
-//
-//	// This example demonstrates a trivial echo server.
-//	http.Handle("/echo", websocket.Handler(EchoServer))
-//	err := http.ListenAndServe(":12345", nil)
-//	if err != nil {
-//		panic("ListenAndServe: " + err.Error())
-//	}
-//}
+func doConnectionRequest(SerialNumber string) {
+	http.Get(cpes[SerialNumber].ConnectionRequestURL)
+}
 
 func main() {
+	cpes = make(map[string]CPE)
+
+	port := flag.Int("p", 9090, "Port to listen on")
+	flag.Parse()
+
 	http.HandleFunc("/acs", handler)
 	http.Handle("/ws", websocket.Handler(echoHandler))
-	fmt.Println("Serving on 9090")
-	err := http.ListenAndServe(":9090", nil)
+	fmt.Printf("Serving on %d\n",*port)
+	err := http.ListenAndServe(fmt.Sprintf(":%d",*port), nil)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
