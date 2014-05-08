@@ -9,8 +9,13 @@ import (
 //	"time"
 	"os"
 	"log"
+  "time"
+  "flag"
+  "math/rand"
+  "strconv"
 )
 
+var num_cpes = flag.Int("n", 2, "how many CPEs should I emulate ?")
 
 var AcsUrl = "http://localhost:9090/acs"
 
@@ -78,28 +83,23 @@ func (cpe CPE) runConnection() {
                 <ParameterValueStruct xsi:type="cwmp:ParameterValueStruct">
                     <Name>InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress
                     </Name>
-                    <Value xsi:type="xsd:string">10.19.0.2</Value>
+                    <Value xsi:type="xsd:string">10.19.0.`+cpe.SerialNumber+`</Value>
                 </ParameterValueStruct>
             </ParameterList>
         </cwmp:Inform>
     </soap:Body>
 </soap:Envelope>`
 
-	//	tr := &http.Transport{
-	//		DisableKeepAlives: false,
-	//	}
-	//	client := &http.Client{Transport: tr}
+  tr := &http.Transport{}
+  client := &http.Client{
+    Transport: tr,
+  }
 
-	resp, err := http.Post(AcsUrl, "text/xml", bytes.NewBufferString(buf))
+	resp, err := client.Post(AcsUrl, "text/xml", bytes.NewBufferString(buf))
 	if err != nil {
 		fmt.Println(err)
 	}
 
-
-	//	req, _ := http.NewRequest("POST", url, bytes.NewBufferString(buf))
-	//	req.Header.Set("Content-Type", "application/json")
-	//	req.Header.Set("Connection", "Keep-Alive")
-	//	resp, _ := client.Do(req)
 
 	io.Copy(ioutil.Discard, resp.Body)
 	resp.Body.Close()
@@ -110,34 +110,59 @@ func (cpe CPE) runConnection() {
 	//	fmt.Printf("body: %s", string(tmp))
 
 	fmt.Printf("[%s] --> Sending empty POST\n", cpe.SerialNumber)
-	resp, err = http.Post(AcsUrl, "text/xml", bytes.NewBufferString(""))
+	resp, err = client.Post(AcsUrl, "text/xml", bytes.NewBufferString(""))
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Printf("[%s] <-- ACS replied with statusCode: %d, content-lenght: %d\n", cpe.SerialNumber, resp.StatusCode, resp.ContentLength)
 
-	//	resp.Close = true
+  resp.Body.Close()
+
+  tr.CloseIdleConnections()
+
+	resp.Close = true
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+  fmt.Println("new connection Request")
+}
 
+func (cpe CPE) periodic(interval int) {
+  fmt.Println("starting cpe with interval", interval, "s")
+  cpe.runConnection()
+  for {
+    time.Sleep(time.Duration(interval) * time.Second)
+    cpe.runConnection()
+  }
+}
+
+func random(min, max int) int {
+    rand.Seed(time.Now().UnixNano())
+    return rand.Intn(max - min) + min
 }
 
 func main() {
-	// create cpe struct
-	CPEs := []CPE{}
+  // create cpe struct
+
+  flag.Parse()
+  fmt.Println(*num_cpes)
+
+  CPEs := []CPE{}
 
 	// initialize CPEs and send bootstrap
-	cpe1 := CPE{"1", "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
-	cpe2 := CPE{"2", "Telsey", "0014", "asd", "asd", "asd", "1 BOOT"}
+	//cpe1 := CPE{"1", "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
+//	cpe2 := CPE{"2", "Telsey", "0014", "asd", "asd", "asd", "1 BOOT"}
 
-	CPEs = append(CPEs, cpe1)
-	CPEs = append(CPEs, cpe2)
+  for i:=1; i <= *num_cpes; i++ {
+    tmp_cpe := CPE{strconv.Itoa(i), "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
+	  CPEs = append(CPEs, tmp_cpe)
+  }
+
 
 //	fmt.Println(CPEs)
 
 	for _, c := range(CPEs) {
-		go c.runConnection()
+		go c.periodic(random(10,120))
 	}
 
 
