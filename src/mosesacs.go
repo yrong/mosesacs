@@ -11,6 +11,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 //	"io"
 	"flag"
+	"encoding/json"
 )
 
 type SoapEnvelope struct {
@@ -94,6 +95,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		xml.Unmarshal(tmp, &Inform)
 		fmt.Println(Inform)
 
+		fmt.Println("Serial:",Inform.DeviceId.SerialNumber)
+
+		cpes[Inform.DeviceId.SerialNumber] = CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI}
+
 		log.Printf("Received an Inform from %s (%d bytes)", r.RemoteAddr, len)
 
 		fmt.Fprintf(w, informResponse())
@@ -128,11 +133,15 @@ func echoHandler(ws *websocket.Conn) {
 		}
 		fmt.Printf("Receive: %s\n", msg[:n])
 
-		m, err := ws.Write(msg[:n])
+//		m, err := ws.Write(msg[:n])
+		txt,_ := json.Marshal(cpes)
+		fmt.Println(string(txt))
+		m, err := ws.Write(txt)
+		fmt.Println(m)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Send: %s\n", msg[:m])
+		fmt.Printf("Send: %s\n", txt)
 	}
 }
 
@@ -142,7 +151,7 @@ func EchoServer(ws *websocket.Conn) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Receive: %s\n", msg[:n])
+	fmt.Printf("Received: %s\n", msg[:n])
 	ws.Write(msg[:n])
 //	io.Copy(ws, ws)
 }
