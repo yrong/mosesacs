@@ -1,4 +1,4 @@
-package gocwmp
+package cwmp
 
 import (
   "encoding/xml"

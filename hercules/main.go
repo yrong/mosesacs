@@ -13,23 +13,15 @@ import (
   "flag"
   "math/rand"
   "strconv"
+  "github.com/lucacervasio/gocwmp/lib"
 )
 
 var num_cpes = flag.Int("n", 2, "how many CPEs should I emulate ?")
 
 var AcsUrl = "http://localhost:9292/acs"
 
-type CPE struct {
-	SerialNumber string
-	Manufacturer string
-	OUI string
-	ConnectionRequestURL string
-	SoftwareVersion string
-	ExternalIPAddress string
-	State string
-}
 
-func (cpe CPE) runConnection() {
+func runConnection(cpe cwmp.CPE) {
 //	fmt.Printf("[%s] connecting with state %s\n", cpe.SerialNumber, cpe.State)
 	fmt.Printf("[%s] --> Starting connection to %s, sending Inform with eventCode %s\n", cpe.SerialNumber, AcsUrl, cpe.State)
 
@@ -124,12 +116,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
   fmt.Println("new connection Request")
 }
 
-func (cpe CPE) periodic(interval int) {
+func periodic(interval int, cpe cwmp.CPE) {
   fmt.Printf("Bootstrapping CPE #%s with interval %ds\n", cpe.SerialNumber, interval)
-  cpe.runConnection()
+  runConnection(cpe)
   for {
     time.Sleep(time.Duration(interval) * time.Second)
-    cpe.runConnection()
+    runConnection(cpe)
   }
 }
 
@@ -144,14 +136,14 @@ func main() {
   flag.Parse()
   fmt.Println("Starting Hercules with",*num_cpes,"cpes")
 
-  CPEs := []CPE{}
+  CPEs := []cwmp.CPE{}
 
 	// initialize CPEs and send bootstrap
-	//cpe1 := CPE{"1", "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
+	//cpe1 := cwmp.CPE{"1", "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
 //	cpe2 := CPE{"2", "Telsey", "0014", "asd", "asd", "asd", "1 BOOT"}
 
   for i:=1; i <= *num_cpes; i++ {
-    tmp_cpe := CPE{strconv.Itoa(i), "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
+    tmp_cpe := cwmp.CPE{strconv.Itoa(i), "PIRELLI BROADBAND SOLUTIONS", "0013C8", "asd", "asd", "asd", "0 BOOTSTRAP"}
 	  CPEs = append(CPEs, tmp_cpe)
   }
 
@@ -159,7 +151,7 @@ func main() {
 //	fmt.Println(CPEs)
 
 	for _, c := range(CPEs) {
-		go c.periodic(random(10,120))
+		go periodic(random(10,120), c)
 	}
 
 

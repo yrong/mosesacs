@@ -12,7 +12,7 @@ import (
 //	"io"
 	"flag"
 	"encoding/json"
-  "github.com/lucacervasio/gocwmp"
+  "github.com/lucacervasio/gocwmp/lib"
 )
 
 
@@ -22,7 +22,7 @@ type Message struct {
 	Message	string
 }
 
-var cpes  map[string]gocwmp.CPE
+var cpes  map[string]cwmp.CPE
 
 
 
@@ -37,24 +37,24 @@ func handler(w http.ResponseWriter, r *http.Request) {
 //	log.Printf("body: %v", body)
 //	log.Printf("body length: %v", len)
 
-	var envelope gocwmp.SoapEnvelope
+	var envelope cwmp.SoapEnvelope
 	xml.Unmarshal(tmp, &envelope)
 
 	messageType := envelope.Body.CWMPMessage.XMLName.Local
 
 
 	if messageType == "Inform" {
-		var Inform gocwmp.CWMPInform
+		var Inform cwmp.CWMPInform
 		xml.Unmarshal(tmp, &Inform)
 		fmt.Println(Inform)
 
 		fmt.Println("Serial:",Inform.DeviceId.SerialNumber)
 
-		cpes[Inform.DeviceId.SerialNumber] = gocwmp.CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI}
+		cpes[Inform.DeviceId.SerialNumber] = cwmp.CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI}
 
 		log.Printf("Received an Inform from %s (%d bytes)", r.RemoteAddr, len)
 
-		fmt.Fprintf(w, gocwmp.InformResponse())
+		fmt.Fprintf(w, cwmp.InformResponse())
 	} else if messageType == "TransferComplete" {
 
 	} else if messageType == "GetRPC" {
@@ -114,7 +114,7 @@ func doConnectionRequest(SerialNumber string) {
 }
 
 func main() {
-	cpes = make(map[string]gocwmp.CPE)
+	cpes = make(map[string]cwmp.CPE)
 
 	port := flag.Int("p", 9090, "Port to listen on")
 	flag.Parse()

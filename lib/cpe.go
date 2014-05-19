@@ -1,4 +1,4 @@
-package gocwmp
+package cwmp
 
 type CPE struct {
 	SerialNumber         string
