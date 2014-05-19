@@ -13,7 +13,7 @@ import (
   "flag"
   "math/rand"
   "strconv"
-  "github.com/lucacervasio/hercules/cwmp"
+  "github.com/lucacervasio/mosesacs/cwmp"
 )
 
 var num_cpes = flag.Int("n", 2, "how many CPEs should I emulate ?")
