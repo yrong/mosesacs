@@ -12,36 +12,9 @@ import (
 //	"io"
 	"flag"
 	"encoding/json"
+  "github.com/lucacervasio/gocwmp"
 )
 
-type SoapEnvelope struct {
-	XMLName xml.Name
-	Header SoapHeader
-	Body    SoapBody
-}
-type SoapHeader struct {}
-type SoapBody struct {
-	CWMPMessage		   CWMPMessage    `xml:",any"`
-}
-type CWMPMessage struct {
-	XMLName xml.Name
-
-}
-
-
-type CWMPInform struct {
-	DeviceId	DeviceID   `xml:"Body>Inform>DeviceId"`
-	Events		[]Event
-}
-type DeviceID struct {
-	Manufacturer string
-	OUI	string
-	SerialNumber string
-}
-
-type Event struct {
-
-}
 
 
 type Message struct {
@@ -49,29 +22,9 @@ type Message struct {
 	Message	string
 }
 
-type CPE struct {
-	SerialNumber string
-	Manufacturer string
-	OUI string
-	ConnectionRequestURL string
-	SoftwareVersion string
-	ExternalIPAddress string
-	State string
-}
+var cpes  map[string]gocwmp.CPE
 
-var cpes  map[string]CPE
 
-func informResponse() string {
-	return `<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <soap:Header/>
-  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
-    <cwmp:InformResponse>
-      <MaxEnvelopes>1</MaxEnvelopes>
-    </cwmp:InformResponse>
-  </soap:Body>
-</soap:Envelope>`
-}
 
 func handler(w http.ResponseWriter, r *http.Request) {
 //	log.Printf("New connection coming from %s", r.RemoteAddr)
@@ -84,24 +37,24 @@ func handler(w http.ResponseWriter, r *http.Request) {
 //	log.Printf("body: %v", body)
 //	log.Printf("body length: %v", len)
 
-	var envelope SoapEnvelope
+	var envelope gocwmp.SoapEnvelope
 	xml.Unmarshal(tmp, &envelope)
 
 	messageType := envelope.Body.CWMPMessage.XMLName.Local
 
 
 	if messageType == "Inform" {
-		var Inform CWMPInform
+		var Inform gocwmp.CWMPInform
 		xml.Unmarshal(tmp, &Inform)
 		fmt.Println(Inform)
 
 		fmt.Println("Serial:",Inform.DeviceId.SerialNumber)
 
-		cpes[Inform.DeviceId.SerialNumber] = CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI}
+		cpes[Inform.DeviceId.SerialNumber] = gocwmp.CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI}
 
 		log.Printf("Received an Inform from %s (%d bytes)", r.RemoteAddr, len)
 
-		fmt.Fprintf(w, informResponse())
+		fmt.Fprintf(w, gocwmp.InformResponse())
 	} else if messageType == "TransferComplete" {
 
 	} else if messageType == "GetRPC" {
@@ -161,7 +114,7 @@ func doConnectionRequest(SerialNumber string) {
 }
 
 func main() {
-	cpes = make(map[string]CPE)
+	cpes = make(map[string]gocwmp.CPE)
 
 	port := flag.Int("p", 9090, "Port to listen on")
 	flag.Parse()
