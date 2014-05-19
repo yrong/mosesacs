@@ -1,4 +1,4 @@
-package main
+package daemon
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 //	"io"
 	"flag"
 	"encoding/json"
-  "github.com/lucacervasio/hercules/cwmp"
+  "github.com/lucacervasio/mosesacs/cwmp"
 )
 
 
@@ -113,7 +113,7 @@ func doConnectionRequest(SerialNumber string) {
 	http.Get(cpes[SerialNumber].ConnectionRequestURL)
 }
 
-func main() {
+func Run() {
 	cpes = make(map[string]cwmp.CPE)
 
 	port := flag.Int("p", 9090, "Port to listen on")
