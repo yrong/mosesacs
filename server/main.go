@@ -12,7 +12,7 @@ import (
 //	"io"
 	"flag"
 	"encoding/json"
-  "github.com/lucacervasio/gocwmp/lib"
+  "github.com/lucacervasio/hercules/cwmp"
 )
 
 
