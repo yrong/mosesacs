@@ -70,25 +70,35 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func websocketHandler(ws *websocket.Conn) {
+  fmt.Println("New websocket client via ws")
+  defer ws.Close()
+
 	msg := make([]byte, 512)
 
 	go func() {
+    for {
 		n, err := ws.Read(msg)
 		if err != nil {
 			fmt.Println("Error while reading from remote websocket")
+      break
 		}
 		fmt.Printf("Received: %s", msg[:n])
+  }
+  fmt.Println("leaving from read routine")
 	}()
 
 	for {
 		_, err := ws.Write([]byte("ciao"))
 		if err != nil {
 			fmt.Println("Error while writing to remote websocket")
+      break
 		}
 		fmt.Printf("Send: %s\n", "ciao")
 		time.Sleep(2 * time.Second)
 	}
+  fmt.Println("leaving from write routine")
 
+  fmt.Println("websocket client has gone")
 }
 
 func doConnectionRequest(SerialNumber string) {
