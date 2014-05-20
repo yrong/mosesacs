@@ -1,21 +1,23 @@
 package main
 
 import (
-  "fmt"
   "flag"
+  "fmt"
   "github.com/lucacervasio/mosesacs/daemon"
   "github.com/lucacervasio/mosesacs/client"
 )
 
 func main() {
 
+	port := flag.Int("p", 9292, "Port to listen on")
   flDaemon := flag.Bool("d", false, "Enable daemon mode")
   flag.Parse()
 
-  fmt.Println("Running mosesacs daemon")
+  fmt.Printf("MosesACS %s by Luca Cervasio <luca.cervasio@gmail.com> (C)2014 http://mosesacs.org\n", daemon.Version)
+
   if (*flDaemon) {
-    daemon.Run()
+    daemon.Run(port)
   } else {
-    client.ExampleDial()
+    client.Connect("ws://localhost:9292/api")
   }
 }

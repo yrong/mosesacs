@@ -2,53 +2,49 @@ package daemon
 
 import (
 	"fmt"
-	"net/http"
-	"log"
 	"io/ioutil"
-//	"strings"
+	"log"
+	"net/http"
+	//	"strings"
+	"code.google.com/p/go.net/websocket"
 	"encoding/xml"
 	"os"
-	"code.google.com/p/go.net/websocket"
-//	"io"
-	"flag"
-	"encoding/json"
-  "github.com/lucacervasio/mosesacs/cwmp"
+	//"encoding/json"
+	"github.com/lucacervasio/mosesacs/cwmp"
+	"time"
 )
 
-
+const Version = "0.1.1"
 
 type Message struct {
 	SerialNumber string
-	Message	string
+	Message      string
 }
 
-var cpes  map[string]cwmp.CPE
-
-
+var cpes map[string]cwmp.CPE
 
 func handler(w http.ResponseWriter, r *http.Request) {
-//	log.Printf("New connection coming from %s", r.RemoteAddr)
+	//	log.Printf("New connection coming from %s", r.RemoteAddr)
 	defer r.Body.Close()
 	tmp, _ := ioutil.ReadAll(r.Body)
 
 	body := string(tmp)
 	len := len(body)
 
-//	log.Printf("body: %v", body)
-//	log.Printf("body length: %v", len)
+	//	log.Printf("body: %v", body)
+	//	log.Printf("body length: %v", len)
 
 	var envelope cwmp.SoapEnvelope
 	xml.Unmarshal(tmp, &envelope)
 
 	messageType := envelope.Body.CWMPMessage.XMLName.Local
 
-
 	if messageType == "Inform" {
 		var Inform cwmp.CWMPInform
 		xml.Unmarshal(tmp, &Inform)
 		fmt.Println(Inform)
 
-		fmt.Println("Serial:",Inform.DeviceId.SerialNumber)
+		fmt.Println("Serial:", Inform.DeviceId.SerialNumber)
 
 		cpes[Inform.DeviceId.SerialNumber] = cwmp.CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI}
 
@@ -71,65 +67,47 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(204)
 	}
 
-
-
-
 }
 
-func echoHandler(ws *websocket.Conn) {
+func websocketHandler(ws *websocket.Conn) {
 	msg := make([]byte, 512)
 
-	for {
+	go func() {
 		n, err := ws.Read(msg)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println("Error while reading from remote websocket")
 		}
-		fmt.Printf("Receive: %s\n", msg[:n])
+		fmt.Printf("Received: %s", msg[:n])
+	}()
 
-//		m, err := ws.Write(msg[:n])
-		txt,_ := json.Marshal(cpes)
-		fmt.Println(string(txt))
-		m, err := ws.Write(txt)
-		fmt.Println(m)
+	for {
+		_, err := ws.Write([]byte("ciao"))
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println("Error while writing to remote websocket")
 		}
-		fmt.Printf("Send: %s\n", txt)
+		fmt.Printf("Send: %s\n", "ciao")
+		time.Sleep(2 * time.Second)
 	}
-}
 
-func EchoServer(ws *websocket.Conn) {
-	msg := make([]byte, 512)
-	n, err := ws.Read(msg)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Received: %s\n", msg[:n])
-	ws.Write(msg[:n])
-//	io.Copy(ws, ws)
 }
 
 func doConnectionRequest(SerialNumber string) {
 	http.Get(cpes[SerialNumber].ConnectionRequestURL)
 }
 
-func Run() {
+func Run(port *int) {
 	cpes = make(map[string]cwmp.CPE)
 
-	port := flag.Int("p", 9090, "Port to listen on")
-	flag.Parse()
-
+  // plain http handler for cpes
+  fmt.Printf("HTTP Handler installed at http://0.0.0.0:%d/acs for cpes to connect\n", *port)
 	http.HandleFunc("/acs", handler)
-	http.Handle("/ws", websocket.Handler(echoHandler))
-	fmt.Printf("Serving on %d\n",*port)
-	err := http.ListenAndServe(fmt.Sprintf(":%d",*port), nil)
+	
+  fmt.Printf("Endpoint installed at http://0.0.0.0:%d/api for admin stuff\n", *port)
+	http.Handle("/api", websocket.Handler(websocketHandler))
+
+	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 }
-
-
-
-
-
