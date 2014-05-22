@@ -70,35 +70,41 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func websocketHandler(ws *websocket.Conn) {
-  fmt.Println("New websocket client via ws")
-  defer ws.Close()
+	fmt.Println("New websocket client via ws")
+	defer ws.Close()
 
 	msg := make([]byte, 512)
 
 	go func() {
-    for {
-		n, err := ws.Read(msg)
-		if err != nil {
-			fmt.Println("Error while reading from remote websocket")
-      break
+		for {
+			n, err := ws.Read(msg)
+			if err != nil {
+				fmt.Println("Error while reading from remote websocket")
+				break
+			}
+			fmt.Printf("Received: %s", msg[:n])
+      if string(msg) == "list" {
+        // client requests a GetParametersValues to cpe with serial
+        //serial := "1"
+        //leaf := "Device.Time."
+        // enqueue this command with the ws number to get the answer back
+      }
 		}
-		fmt.Printf("Received: %s", msg[:n])
-  }
-  fmt.Println("leaving from read routine")
+		fmt.Println("leaving from read routine")
 	}()
 
 	for {
 		_, err := ws.Write([]byte("ciao"))
 		if err != nil {
 			fmt.Println("Error while writing to remote websocket")
-      break
+			break
 		}
 		fmt.Printf("Send: %s\n", "ciao")
 		time.Sleep(2 * time.Second)
 	}
-  fmt.Println("leaving from write routine")
+	fmt.Println("leaving from write routine")
 
-  fmt.Println("websocket client has gone")
+	fmt.Println("websocket client has gone")
 }
 
 func doConnectionRequest(SerialNumber string) {
@@ -108,11 +114,11 @@ func doConnectionRequest(SerialNumber string) {
 func Run(port *int) {
 	cpes = make(map[string]cwmp.CPE)
 
-  // plain http handler for cpes
-  fmt.Printf("HTTP Handler installed at http://0.0.0.0:%d/acs for cpes to connect\n", *port)
+	// plain http handler for cpes
+	fmt.Printf("HTTP Handler installed at http://0.0.0.0:%d/acs for cpes to connect\n", *port)
 	http.HandleFunc("/acs", handler)
-	
-  fmt.Printf("Endpoint installed at http://0.0.0.0:%d/api for admin stuff\n", *port)
+
+	fmt.Printf("Endpoint installed at http://0.0.0.0:%d/api for admin stuff\n", *port)
 	http.Handle("/api", websocket.Handler(websocketHandler))
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)

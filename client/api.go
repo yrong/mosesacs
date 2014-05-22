@@ -4,9 +4,9 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"fmt"
 	"os"
+//	"strings"
 )
 
-// This example demonstrates a trivial client.
 func Connect(url string) {
 	origin := "http://localhost/"
 	ws, err := websocket.Dial(url, "", origin)
@@ -19,31 +19,34 @@ func Connect(url string) {
 	go Write(ws, channel)
 	go Read(ws, channel)
 
-	cmd := <-channel
+	for {
+		cmd := <-channel
 
-  fmt.Printf("Got '%s' from channel\n", cmd)
+		fmt.Printf("Got '%s' from channel\n", cmd)
 
-  switch cmd {
-    case "quit": 
-      fmt.Println("Quit")
-      os.Exit(0)
-  }
+		switch {
+		  case cmd == "quit":
+			  fmt.Println("Quit")
+			  os.Exit(0)
+		}
+
+	}
 
 }
 
 func Write(ws *websocket.Conn, channel chan string) {
-	if _, err := ws.Write([]byte("hello, world!\n")); err != nil {
-    channel <- "quit"
+	if _, err := ws.Write([]byte("list\n")); err != nil {
+		channel <- "quit"
 	}
 }
 
 func Read(ws *websocket.Conn, channel chan string) {
 	var msg = make([]byte, 512)
 	for {
-    if _, err := ws.Read(msg); err != nil {
-      channel <- "quit"
+		if _, err := ws.Read(msg); err != nil {
+			channel <- "quit"
 		}
-		fmt.Printf("Received: %s\n", msg)
+		channel <- string(msg)
 	}
 
 }
