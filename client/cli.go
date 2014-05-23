@@ -48,21 +48,18 @@ func RunCli(url string) {
 			fmt.Println("Error reading line: ", err)
 		} else {
 			// add to history
-			if cmd != "" && cmd != "\n" && cmd != "\r\n" {
-			  //fmt.Println("Got:", cmd)
-				line.AppendHistory(cmd)
-			}
       if cmd == "exit" {
         quit(url,line)
-      }
-
+      } else if cmd != "" && cmd != "\n" && cmd != "\r\n" {
+				line.AppendHistory(cmd)
+        processCommand(cmd)
+			}
 		}
 
 	}
 
 	// quit
   quit(url,line)
-
 }
 
 func quit(url string, line *liner.State) {
@@ -76,4 +73,14 @@ func quit(url string, line *liner.State) {
   line.Close()
 	fmt.Println("Disconnected. Bye.")
   os.Exit(0)
+}
+
+
+func processCommand(cmd string) {
+  switch cmd {
+    case "version":
+      fmt.Println("0.1.2")
+    default:
+      fmt.Println("Unknown command")
+  }
 }
