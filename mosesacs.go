@@ -31,6 +31,6 @@ func main() {
   if (*flDaemon) {
     daemon.Run(port)
   } else {
-    client.RunCli(*flUrl)
+    client.Run(*flUrl)
   }
 }

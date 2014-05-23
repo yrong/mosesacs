@@ -2,16 +2,32 @@ package client
 
 import (
 	"fmt"
-	"github.com/peterh/liner"
+  "time"
+	"github.com/lucacervasio/liner"
 	"os"
 	"os/signal"
 	"strings"
 )
 
-func RunCli(url string) {
+var line *liner.State
+
+func Run(url string) {
+  go logReceiver()
+  runCli(url)
+}
+
+func logReceiver() {
+  for {
+    line.PrintAbovePrompt("log");
+    time.Sleep(2 * time.Second)
+  }
+}
+
+
+func runCli(url string) {
 	fmt.Printf("Connected to MosesACS @ws://%s/api\n", url)
 
-	line := liner.NewLiner()
+	line = liner.NewLiner()
 	defer line.Close()
 
 	c := make(chan os.Signal, 1)
