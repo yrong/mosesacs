@@ -12,6 +12,7 @@ import (
 	//"encoding/json"
 	"github.com/lucacervasio/mosesacs/cwmp"
 	"time"
+	"strings"
 )
 
 const Version = "0.1.1"
@@ -77,18 +78,20 @@ func websocketHandler(ws *websocket.Conn) {
 
 	go func() {
 		for {
-			n, err := ws.Read(msg)
+			_, err := ws.Read(msg)
 			if err != nil {
 				fmt.Println("Error while reading from remote websocket")
 				break
 			}
-			fmt.Printf("Received: %s", msg[:n])
-      if string(msg) == "list" {
-        // client requests a GetParametersValues to cpe with serial
-        //serial := "1"
-        //leaf := "Device.Time."
-        // enqueue this command with the ws number to get the answer back
-      }
+			m := strings.Trim(string(msg), "\r\n"+string(0))
+			fmt.Printf("Received: %s\n", m)
+			if m == "list" {
+				fmt.Println("ciao")
+				// client requests a GetParametersValues to cpe with serial
+				//serial := "1"
+				//leaf := "Device.Time."
+				// enqueue this command with the ws number to get the answer back
+			}
 		}
 		fmt.Println("leaving from read routine")
 	}()
