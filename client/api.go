@@ -4,7 +4,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"fmt"
 	"os"
-//	"strings"
+	//	"strings"
 )
 
 func Connect(url string) {
@@ -12,6 +12,7 @@ func Connect(url string) {
 	ws, err := websocket.Dial(url, "", origin)
 	if err != nil {
 		fmt.Println("Error connecting to remote MosesACS instance")
+		line.Close()
 		os.Exit(1)
 	}
 
@@ -25,9 +26,10 @@ func Connect(url string) {
 		fmt.Printf("Got '%s' from channel\n", cmd)
 
 		switch {
-		  case cmd == "quit":
-			  fmt.Println("Quit")
-			  os.Exit(0)
+		case cmd == "quit":
+			fmt.Println("Quit")
+			line.Close()
+			os.Exit(0)
 		}
 
 	}

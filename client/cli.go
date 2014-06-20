@@ -2,33 +2,33 @@ package client
 
 import (
 	"fmt"
-  "time"
 	"github.com/lucacervasio/liner"
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 )
 
 var line *liner.State
 
 func Run(url string) {
-  go logReceiver()
-  runCli(url)
+	go logReceiver()
+	runCli(url)
 }
 
 func logReceiver() {
-  for {
-    line.PrintAbovePrompt("log");
-    time.Sleep(2 * time.Second)
-  }
+	for {
+		line.PrintAbovePrompt("log")
+		time.Sleep(2 * time.Second)
+	}
 }
 
-
 func runCli(url string) {
-	fmt.Printf("Connected to MosesACS @ws://%s/api\n", url)
-
 	line = liner.NewLiner()
 	defer line.Close()
+
+	go Connect(fmt.Sprintf("ws://%s/api", url))
+	fmt.Printf("Connected to MosesACS @ws://%s/api\n", url)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -36,8 +36,8 @@ func runCli(url string) {
 		for sig := range c {
 			// sig is a ^C, handle it
 			if sig.String() == "interrupt" {
-        fmt.Printf("\n")
-				quit(url,line)
+				fmt.Printf("\n")
+				quit(url, line)
 			}
 		}
 	}()
@@ -64,18 +64,18 @@ func runCli(url string) {
 			fmt.Println("Error reading line: ", err)
 		} else {
 			// add to history
-      if cmd == "exit" {
-        quit(url,line)
-      } else if cmd != "" && cmd != "\n" && cmd != "\r\n" {
+			if cmd == "exit" {
+				quit(url, line)
+			} else if cmd != "" && cmd != "\n" && cmd != "\r\n" {
 				line.AppendHistory(cmd)
-        processCommand(cmd)
+				processCommand(cmd)
 			}
 		}
 
 	}
 
 	// quit
-  quit(url,line)
+	quit(url, line)
 }
 
 func quit(url string, line *liner.State) {
@@ -86,17 +86,16 @@ func quit(url string, line *liner.State) {
 		f.Close()
 	}
 
-  line.Close()
+	line.Close()
 	fmt.Println("Disconnected. Bye.")
-  os.Exit(0)
+	os.Exit(0)
 }
 
-
 func processCommand(cmd string) {
-  switch cmd {
-    case "version":
-      fmt.Println("0.1.2")
-    default:
-      fmt.Println("Unknown command")
-  }
+	switch cmd {
+	case "version":
+		fmt.Println("0.1.2")
+	default:
+		fmt.Println("Unknown command")
+	}
 }
