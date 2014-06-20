@@ -11,8 +11,8 @@ import (
 	"os"
 	//"encoding/json"
 	"github.com/lucacervasio/mosesacs/cwmp"
-	"time"
 	"strings"
+	"time"
 )
 
 const Version = "0.1.1"
