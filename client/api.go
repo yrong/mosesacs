@@ -23,7 +23,8 @@ func Connect(url string) {
 	for {
 		cmd := <-channel
 
-		fmt.Printf("Got '%s' from channel\n", cmd)
+		//line.PrintAbovePrompt(string(fmt.Fprintf ("Got '%s' from channel\n", cmd)))
+				line.PrintAbovePrompt("got")
 
 		switch {
 		case cmd == "quit":
