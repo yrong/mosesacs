@@ -17,7 +17,7 @@ func Connect(url string, chan_request chan string) {
 	}
 
 	var channel = make(chan string)
-	go Write(ws, channel, "bella yo")
+//	go Write(ws, channel, "bella yo")
 	go Read(ws, channel)
 
 	for {
@@ -41,7 +41,7 @@ func Connect(url string, chan_request chan string) {
 }
 
 func Write(ws *websocket.Conn, channel chan string, cmd string) {
-	fmt.Println("<"+cmd+">")
+	fmt.Println("<" + cmd + ">")
 	if _, err := ws.Write([]byte(cmd)); err != nil {
 		channel <- "quit"
 	}
@@ -53,7 +53,7 @@ func Read(ws *websocket.Conn, channel chan string) {
 		if _, err := ws.Read(msg); err != nil {
 			channel <- "quit"
 		}
-		fmt.Println(msg)
+		line.PrintAbovePrompt(string(msg))
 		channel <- string(msg)
 	}
 

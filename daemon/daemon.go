@@ -26,6 +26,18 @@ type Message struct {
 
 var cpes map[string]cwmp.CPE
 
+type Request struct {
+	Id string
+	Websocket *websocket.Conn
+	CwmpMessage string
+}
+
+func (req Request) reply(msg string) {
+	if _, err := req.Websocket.Write([]byte(msg)); err != nil {
+
+	}
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	//	log.Printf("New connection coming from %s", r.RemoteAddr)
 	defer r.Body.Close()

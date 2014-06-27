@@ -6,21 +6,14 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"time"
+//	"time"
+	"github.com/lucacervasio/mosesacs/daemon"
 )
 
 var line *liner.State
 
 func Run(url string) {
-	go logReceiver()
 	runCli(url)
-}
-
-func logReceiver() {
-	for {
-		line.PrintAbovePrompt("log")
-		time.Sleep(2 * time.Second)
-	}
 }
 
 func runCli(url string) {
@@ -95,7 +88,7 @@ func quit(url string, line *liner.State) {
 func processCommand(cmd string, c chan string) {
 	switch cmd {
 	case "version":
-		fmt.Println("0.1.2")
+		fmt.Println(daemon.Version)
 	case "readmib":
 		c <- "readMib 10 InternetGatewayDevice."
 	case "list":
