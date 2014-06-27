@@ -27,7 +27,8 @@ func runCli(url string) {
 	line = liner.NewLiner()
 	defer line.Close()
 
-	go Connect(fmt.Sprintf("ws://%s/api", url))
+	chan_request := make(chan string)
+	go Connect(fmt.Sprintf("ws://%s/api", url), chan_request)
 	fmt.Printf("Connected to MosesACS @ws://%s/api\n", url)
 
 	c := make(chan os.Signal, 1)
@@ -68,7 +69,7 @@ func runCli(url string) {
 				quit(url, line)
 			} else if cmd != "" && cmd != "\n" && cmd != "\r\n" {
 				line.AppendHistory(cmd)
-				processCommand(cmd)
+				processCommand(cmd, chan_request)
 			}
 		}
 
@@ -91,10 +92,14 @@ func quit(url string, line *liner.State) {
 	os.Exit(0)
 }
 
-func processCommand(cmd string) {
+func processCommand(cmd string, c chan string) {
 	switch cmd {
 	case "version":
 		fmt.Println("0.1.2")
+	case "readMib":
+		c <- "readMib"
+	case "list":
+		c <- "list"	
 	default:
 		fmt.Println("Unknown command")
 	}

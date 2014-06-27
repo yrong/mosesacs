@@ -78,31 +78,49 @@ func websocketHandler(ws *websocket.Conn) {
 
 	go func() {
 		for {
-			_, err := ws.Read(msg)
+			n := 0
+			n, err := ws.Read(msg)
+			fmt.Printf("Letti %d bytes \n",n)
 			if err != nil {
 				fmt.Println("Error while reading from remote websocket")
 				break
 			}
-			m := strings.Trim(string(msg), "\r\n"+string(0))
-			fmt.Printf("Received: %s\n", m)
+			// fmt.Printf("R: <%s>\n",msg[:n])
+			m := strings.Trim(string(msg[:n]), "\r\n"+string(0))
+			fmt.Printf("Received: <%s>\n", m)
 			if m == "list" {
-				fmt.Println("ciao")
+				fmt.Println("cpes list")
+				for key, value := range cpes {
+
+					fmt.Println("Key:", key, "Value:", value.OUI)
+
+					_, err := ws.Write([]byte("CPE #"+key+" with OUI "+value.OUI))
+					if err != nil {
+						fmt.Println("Error while writing to remote websocket")
+						break
+					}
+
+				}
+				
+
 				// client requests a GetParametersValues to cpe with serial
 				//serial := "1"
 				//leaf := "Device.Time."
 				// enqueue this command with the ws number to get the answer back
 			}
+
 		}
 		fmt.Println("leaving from read routine")
 	}()
 
 	for {
-		_, err := ws.Write([]byte("ciao"))
-		if err != nil {
-			fmt.Println("Error while writing to remote websocket")
-			break
-		}
-		fmt.Printf("Send: %s\n", "ciao")
+
+		// _, err := ws.Write([]byte("ciao"))
+		// if err != nil {
+		// 	fmt.Println("Error while writing to remote websocket")
+		// 	break
+		// }
+		// fmt.Printf("Send: %s\n", "ciao")
 		time.Sleep(2 * time.Second)
 	}
 	fmt.Println("leaving from write routine")

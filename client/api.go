@@ -7,7 +7,7 @@ import (
 	//	"strings"
 )
 
-func Connect(url string) {
+func Connect(url string, chan_request chan string) {
 	origin := "http://localhost/"
 	ws, err := websocket.Dial(url, "", origin)
 	if err != nil {
@@ -17,27 +17,32 @@ func Connect(url string) {
 	}
 
 	var channel = make(chan string)
-	go Write(ws, channel)
+	go Write(ws, channel, "bella yo")
 	go Read(ws, channel)
 
 	for {
-		cmd := <-channel
+		select {
+		case cmd := <-channel:
+			fmt.Printf("Got '%s' from channel\n", cmd)
 
-		fmt.Printf("Got '%s' from channel\n", cmd)
-
-		switch {
-		case cmd == "quit":
-			fmt.Println("Quit")
-			line.Close()
-			os.Exit(0)
+			switch {
+			case cmd == "quit":
+				fmt.Println("Quit")
+				line.Close()
+				os.Exit(0)
+			}
+		case request := <-chan_request:
+			fmt.Printf("cli request %s", request)
+			go Write(ws, channel, request)
 		}
 
 	}
 
 }
 
-func Write(ws *websocket.Conn, channel chan string) {
-	if _, err := ws.Write([]byte("list\n")); err != nil {
+func Write(ws *websocket.Conn, channel chan string, cmd string) {
+	fmt.Println("<"+cmd+">")
+	if _, err := ws.Write([]byte(cmd)); err != nil {
 		channel <- "quit"
 	}
 }
