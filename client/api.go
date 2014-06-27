@@ -53,6 +53,7 @@ func Read(ws *websocket.Conn, channel chan string) {
 		if _, err := ws.Read(msg); err != nil {
 			channel <- "quit"
 		}
+		fmt.Println(msg)
 		channel <- string(msg)
 	}
 

@@ -13,6 +13,8 @@ import (
 	"github.com/lucacervasio/mosesacs/cwmp"
 	"strings"
 	"time"
+	"regexp"
+	"strconv"
 )
 
 const Version = "0.1.1"
@@ -88,25 +90,41 @@ func websocketHandler(ws *websocket.Conn) {
 			// fmt.Printf("R: <%s>\n",msg[:n])
 			m := strings.Trim(string(msg[:n]), "\r\n"+string(0))
 			fmt.Printf("Received: <%s>\n", m)
+
+			r, _ := regexp.Compile("readMib")
+			// matched, err := regexp.MatchString("readMib", m)
+			// fmt.Println(matched, err)
+
 			if m == "list" {
 				fmt.Println("cpes list")
+				var cpeListMessage string
 				for key, value := range cpes {
 
 					fmt.Println("Key:", key, "Value:", value.OUI)
-
-					_, err := ws.Write([]byte("CPE #"+key+" with OUI "+value.OUI))
-					if err != nil {
-						fmt.Println("Error while writing to remote websocket")
-						break
-					}
+					cpeListMessage += "CPE #"+key+" with OUI "+value.OUI+"\n"
+					// strings.Join(cpeListMessage, "CPE #"+key+" with OUI "+value.OUI+"\n")
 
 				}
-				
+
+				_, err := ws.Write([]byte(cpeListMessage))
+				if err != nil {
+					fmt.Println("Error while writing to remote websocket")
+					break
+				}
 
 				// client requests a GetParametersValues to cpe with serial
 				//serial := "1"
 				//leaf := "Device.Time."
 				// enqueue this command with the ws number to get the answer back
+
+			} else if r.MatchString(m) == true {
+				fmt.Println("READ MIB")
+				re := regexp.MustCompile(`\s`)
+				i := re.Split("readMib 10 InternetGatewayDevice.", -1)
+				cpeSerial, _ := strconv.Atoi(i[1])
+				fmt.Printf("CPE %d\n", cpeSerial)
+				fmt.Printf("LEAF %s\n", i[2])
+
 			}
 
 		}

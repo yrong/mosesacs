@@ -96,10 +96,12 @@ func processCommand(cmd string, c chan string) {
 	switch cmd {
 	case "version":
 		fmt.Println("0.1.2")
-	case "readMib":
-		c <- "readMib"
+	case "readmib":
+		c <- "readMib 10 InternetGatewayDevice."
 	case "list":
 		c <- "list"	
+	case "num":
+		c <- "num"
 	default:
 		fmt.Println("Unknown command")
 	}
