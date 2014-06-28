@@ -7,10 +7,11 @@ import (
 	"os/signal"
 	"strings"
 //	"time"
-	"github.com/lucacervasio/mosesacs/daemon"
 )
 
 var line *liner.State
+
+var client Connection
 
 func Run(url string) {
 	runCli(url)
@@ -20,8 +21,7 @@ func runCli(url string) {
 	line = liner.NewLiner()
 	defer line.Close()
 
-	chan_request := make(chan string)
-	go Connect(fmt.Sprintf("ws://%s/api", url), chan_request)
+	client.Start(fmt.Sprintf("ws://%s/api", url))
 	fmt.Printf("Connected to MosesACS @ws://%s/api\n", url)
 
 	c := make(chan os.Signal, 1)
@@ -52,6 +52,8 @@ func runCli(url string) {
 		f.Close()
 	}
 
+	go receiver()
+
 	for {
 
 		if cmd, err := line.Prompt(fmt.Sprintf("moses@%s> ", url)); err != nil {
@@ -62,7 +64,7 @@ func runCli(url string) {
 				quit(url, line)
 			} else if cmd != "" && cmd != "\n" && cmd != "\r\n" {
 				line.AppendHistory(cmd)
-				processCommand(cmd, chan_request)
+				processCommand(cmd)
 			}
 		}
 
@@ -70,6 +72,13 @@ func runCli(url string) {
 
 	// quit
 	quit(url, line)
+}
+
+func receiver() {
+	for {
+		msg := <-client.Incoming
+		line.PrintAbovePrompt(string(msg))
+	}
 }
 
 func quit(url string, line *liner.State) {
@@ -85,16 +94,16 @@ func quit(url string, line *liner.State) {
 	os.Exit(0)
 }
 
-func processCommand(cmd string, c chan string) {
+func processCommand(cmd string) {
 	switch cmd {
 	case "version":
-		fmt.Println(daemon.Version)
+		client.Write("version")
 	case "readmib":
-		c <- "readMib 10 InternetGatewayDevice."
+		client.Write("readMib 10 InternetGatewayDevice.")
 	case "list":
-		c <- "list"	
+		client.Write("list")
 	case "num":
-		c <- "num"
+		client.Write("num")
 	default:
 		fmt.Println("Unknown command")
 	}
