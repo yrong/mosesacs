@@ -10,18 +10,15 @@ import (
 )
 
 var line *liner.State
-
 var client Connection
 
 func Run(url string) {
-	runCli(url)
-}
-
-func runCli(url string) {
 	line = liner.NewLiner()
 	defer line.Close()
 
 	client.Start(fmt.Sprintf("ws://%s/api", url))
+	defer client.Close()
+
 	fmt.Printf("Connected to MosesACS @ws://%s/api\n", url)
 
 	c := make(chan os.Signal, 1)

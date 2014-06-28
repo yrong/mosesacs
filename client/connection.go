@@ -41,6 +41,10 @@ func (conn *Connection) read() {
 	}
 }
 
+func (conn *Connection) Close() {
+	conn.ws.Close()
+}
+
 func (conn *Connection) Write(cmd string) {
 	var ws = conn.ws
 	if _, err := ws.Write([]byte(cmd)); err != nil {
