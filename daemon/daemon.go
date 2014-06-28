@@ -129,7 +129,7 @@ func websocketHandler(ws *websocket.Conn) {
 				// enqueue this command with the ws number to get the answer back
 
 			} else if m == "version" {
-				_,err := ws.Write([]byte(Version))
+				_,err := ws.Write([]byte(fmt.Sprintf("MosesAcs Daemon %s", Version)))
 				if err != nil {
 					fmt.Println("Error while writing to remote websocket")
 					break
