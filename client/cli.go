@@ -6,28 +6,19 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"time"
+//	"time"
 )
 
 var line *liner.State
+var client Connection
 
 func Run(url string) {
-	go logReceiver()
-	runCli(url)
-}
-
-func logReceiver() {
-	for {
-		line.PrintAbovePrompt("log")
-		time.Sleep(2 * time.Second)
-	}
-}
-
-func runCli(url string) {
 	line = liner.NewLiner()
 	defer line.Close()
 
-	go Connect(fmt.Sprintf("ws://%s/api", url))
+	client.Start(fmt.Sprintf("ws://%s/api", url))
+	defer client.Close()
+
 	fmt.Printf("Connected to MosesACS @ws://%s/api\n", url)
 
 	c := make(chan os.Signal, 1)
@@ -58,6 +49,8 @@ func runCli(url string) {
 		f.Close()
 	}
 
+	go receiver()
+
 	for {
 
 		if cmd, err := line.Prompt(fmt.Sprintf("moses@%s> ", url)); err != nil {
@@ -78,6 +71,13 @@ func runCli(url string) {
 	quit(url, line)
 }
 
+func receiver() {
+	for {
+		msg := <-client.Incoming
+		line.PrintAbovePrompt(string(msg))
+	}
+}
+
 func quit(url string, line *liner.State) {
 	if f, err := os.Create(fmt.Sprintf("/Users/lc/.moses@%s.history", url)); err != nil {
 		fmt.Println("Error writing history file: ", err)
@@ -94,7 +94,13 @@ func quit(url string, line *liner.State) {
 func processCommand(cmd string) {
 	switch cmd {
 	case "version":
-		fmt.Println("0.1.2")
+		client.Write("version")
+	case "readmib":
+		client.Write("readMib 10 InternetGatewayDevice.")
+	case "list":
+		client.Write("list")
+	case "num":
+		client.Write("num")
 	default:
 		fmt.Println("Unknown command")
 	}
