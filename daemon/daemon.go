@@ -94,28 +94,27 @@ func websocketHandler(ws *websocket.Conn) {
 		for {
 			n := 0
 			n, err := ws.Read(msg)
-			fmt.Printf("Letti %d bytes \n",n)
+//			fmt.Printf("Letti %d bytes \n",n)
 			if err != nil {
 				fmt.Println("Error while reading from remote websocket")
 				break
 			}
 			// fmt.Printf("R: <%s>\n",msg[:n])
 			m := strings.Trim(string(msg[:n]), "\r\n"+string(0))
-			fmt.Printf("Received: <%s>\n", m)
+//			fmt.Printf("Received: <%s>\n", m)
 
 			r, _ := regexp.Compile("readMib")
 			// matched, err := regexp.MatchString("readMib", m)
 			// fmt.Println(matched, err)
 
 			if m == "list" {
-				fmt.Println("cpes list")
+//				fmt.Println("cpes list")
 				var cpeListMessage string
-				for key, value := range cpes {
 
+				for key, value := range cpes {
 					fmt.Println("Key:", key, "Value:", value.OUI)
 					cpeListMessage += "CPE #"+key+" with OUI "+value.OUI+"\n"
 					// strings.Join(cpeListMessage, "CPE #"+key+" with OUI "+value.OUI+"\n")
-
 				}
 
 				_, err := ws.Write([]byte(cpeListMessage))
@@ -128,6 +127,13 @@ func websocketHandler(ws *websocket.Conn) {
 				//serial := "1"
 				//leaf := "Device.Time."
 				// enqueue this command with the ws number to get the answer back
+
+			} else if m == "version" {
+				_,err := ws.Write([]byte(Version))
+				if err != nil {
+					fmt.Println("Error while writing to remote websocket")
+					break
+				}
 
 			} else if r.MatchString(m) == true {
 				fmt.Println("READ MIB")
