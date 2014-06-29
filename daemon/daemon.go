@@ -25,7 +25,8 @@ type Message struct {
 	Message      string
 }
 
-var cpes map[string]cwmp.CPE
+var cpes map[string]cwmp.CPE      // by serial
+var sessions map[string]cwmp.CPE  // by session cookie
 var clients []Client
 
 type Request struct {
@@ -48,6 +49,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	body := string(tmp)
 	len := len(body)
 
+
+
 	//	log.Printf("body: %v", body)
 	//	log.Printf("body length: %v", len)
 
@@ -55,6 +58,20 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	xml.Unmarshal(tmp, &envelope)
 
 	messageType := envelope.Body.CWMPMessage.XMLName.Local
+
+	var cpe cwmp.CPE
+
+	if messageType != "Inform" {
+		if cookie, err := r.Cookie("mosesacs"); err != nil && cookie != nil {
+			fmt.Println(cookie)
+			fmt.Println("found cookie" + cookie.Value)
+			cpe = sessions[cookie.Value]
+		} else {
+			fmt.Println("cookie 'mosesacs' missing")
+			w.WriteHeader(403)
+			return
+		}
+	}
 
 	if messageType == "Inform" {
 		var Inform cwmp.CWMPInform
@@ -66,8 +83,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		if _,exists := cpes[Inform.DeviceId.SerialNumber]; !exists {
 			cpes[Inform.DeviceId.SerialNumber] = cwmp.CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI, Queue: lane.NewQueue()}
 		}
+		cpe = cpes[Inform.DeviceId.SerialNumber]
 
 		log.Printf("Received an Inform from %s (%d bytes)", r.RemoteAddr, len)
+
+		expiration := time.Now().AddDate(0,0,1)
+		hash := "asdadasd"
+
+		cookie := http.Cookie{Name: "mosesacs", Value: hash, Expires: expiration}
+		http.SetCookie(w, &cookie)
+		sessions[hash] = cpe
 
 		fmt.Fprintf(w, cwmp.InformResponse())
 	} else if messageType == "TransferComplete" {
@@ -83,7 +108,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Got Empty Post or a Response. Now check for any event to send, otherwise 204
-		w.WriteHeader(204)
+		if cpe.Queue.Size() > 0 {
+			req := cpe.Queue.Dequeue().(Request)
+			fmt.Println("sending"+req.CwmpMessage)
+		} else {
+			w.WriteHeader(204)
+		}
 	}
 
 }
@@ -161,10 +191,10 @@ func websocketHandler(ws *websocket.Conn) {
 			cpeSerial, _ := strconv.Atoi(i[1])
 			fmt.Printf("CPE %d\n", cpeSerial)
 			fmt.Printf("LEAF %s\n", i[2])
-//			req := Request{"1", ws, cwmp.GetParameterValues(i[2])}
+			req := Request{"1", ws, cwmp.GetParameterValues(i[2])}
 
 			if _,exists := cpes[i[1]]; exists {
-				cpes[i[1]].Queue.Enqueue(cwmp.GetParameterValues(i[2]))
+				cpes[i[1]].Queue.Enqueue(req)
 				if cpes[i[1]].State != "Connected" {
 					// issue a connection request
 					go doConnectionRequest(i[1])
@@ -185,6 +215,7 @@ func doConnectionRequest(SerialNumber string) {
 
 func Run(port *int) {
 	cpes = make(map[string]cwmp.CPE)
+	sessions = make(map[string]cwmp.CPE)
 
 	// plain http handler for cpes
 	fmt.Printf("HTTP Handler installed at http://0.0.0.0:%d/acs for cpes to connect\n", *port)
