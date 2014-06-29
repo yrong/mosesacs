@@ -20,20 +20,33 @@ import (
 
 const Version = "0.1.1"
 
-type Message struct {
-	SerialNumber string
-	Message      string
-}
-
-var cpes map[string]cwmp.CPE      // by serial
-var sessions map[string]cwmp.CPE  // by session cookie
-var clients []Client
-
 type Request struct {
 	Id          string
 	Websocket   *websocket.Conn
 	CwmpMessage string
 }
+
+type CPE struct {
+	SerialNumber         string
+	Manufacturer         string
+	OUI                  string
+	ConnectionRequestURL string
+	SoftwareVersion      string
+	ExternalIPAddress    string
+	State                string
+	Queue 				 *lane.Queue
+	Waiting				 *Request
+}
+
+type Message struct {
+	SerialNumber string
+	Message      string
+}
+
+var cpes map[string]CPE      // by serial
+var sessions map[string]*CPE  // by session cookie
+var clients []Client
+
 
 func (req Request) reply(msg string) {
 	if _, err := req.Websocket.Write([]byte(msg)); err != nil {
@@ -59,11 +72,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	messageType := envelope.Body.CWMPMessage.XMLName.Local
 
-	var cpe cwmp.CPE
+	var cpe *CPE
 
 	if messageType != "Inform" {
 		if cookie, err := r.Cookie("mosesacs"); err == nil {
 			cpe = sessions[cookie.Value]
+			fmt.Println("recuperato CPE",cpe)
 		} else {
 			fmt.Println("cookie 'mosesacs' missing")
 			w.WriteHeader(401)
@@ -79,9 +93,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Serial:", Inform.DeviceId.SerialNumber)
 
 		if _,exists := cpes[Inform.DeviceId.SerialNumber]; !exists {
-			cpes[Inform.DeviceId.SerialNumber] = cwmp.CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI, Queue: lane.NewQueue()}
+			cpes[Inform.DeviceId.SerialNumber] = CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI, Queue: lane.NewQueue()}
 		}
-		cpe = cpes[Inform.DeviceId.SerialNumber]
+		obj := cpes[Inform.DeviceId.SerialNumber]
+		cpe := &obj
 
 		log.Printf("Received an Inform from %s (%d bytes)", r.RemoteAddr, len)
 
@@ -105,11 +120,22 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Got Empty Post")
 		}
 
+		if cpe.Waiting != nil {
+			fmt.Println("devo mandare indietro questa risposta")
+			if _, err := cpe.Waiting.Websocket.Write([]byte(body)); err != nil {
+				fmt.Println(err)
+			}
+			cpe.Waiting = &Request{}
+		}
+
 		// Got Empty Post or a Response. Now check for any event to send, otherwise 204
 		if cpe.Queue.Size() > 0 {
 			req := cpe.Queue.Dequeue().(Request)
-			fmt.Println("sending "+req.CwmpMessage)
+//			fmt.Println("sending "+req.CwmpMessage)
 			fmt.Fprintf(w, req.CwmpMessage)
+			cpe.Waiting = &req
+			fmt.Println("setting Waiting to req",req)
+			fmt.Println("cpe vale",cpe)
 		} else {
 			w.WriteHeader(204)
 		}
@@ -213,8 +239,8 @@ func doConnectionRequest(SerialNumber string) {
 }
 
 func Run(port *int) {
-	cpes = make(map[string]cwmp.CPE)
-	sessions = make(map[string]cwmp.CPE)
+	cpes = make(map[string]CPE)
+	sessions = make(map[string]*CPE)
 
 	// plain http handler for cpes
 	fmt.Printf("HTTP Handler installed at http://0.0.0.0:%d/acs for cpes to connect\n", *port)
