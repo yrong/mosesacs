@@ -1,5 +1,7 @@
 package cwmp
 
+import "github.com/oleiade/lane"
+
 type CPE struct {
 	SerialNumber         string
 	Manufacturer         string
@@ -8,4 +10,5 @@ type CPE struct {
 	SoftwareVersion      string
 	ExternalIPAddress    string
 	State                string
+	Queue 				 *lane.Queue
 }

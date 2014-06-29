@@ -11,6 +11,7 @@ import (
 	"os"
 	//"encoding/json"
 	"github.com/lucacervasio/mosesacs/cwmp"
+	"github.com/oleiade/lane"
 	"strings"
 	"time"
 	"regexp"
@@ -25,10 +26,11 @@ type Message struct {
 }
 
 var cpes map[string]cwmp.CPE
+var clients []Client
 
 type Request struct {
-	Id string
-	Websocket *websocket.Conn
+	Id          string
+	Websocket   *websocket.Conn
 	CwmpMessage string
 }
 
@@ -61,7 +63,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println("Serial:", Inform.DeviceId.SerialNumber)
 
-		cpes[Inform.DeviceId.SerialNumber] = cwmp.CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI}
+		if _,exists := cpes[Inform.DeviceId.SerialNumber]; !exists {
+			cpes[Inform.DeviceId.SerialNumber] = cwmp.CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI, Queue: lane.NewQueue()}
+		}
 
 		log.Printf("Received an Inform from %s (%d bytes)", r.RemoteAddr, len)
 
@@ -88,83 +92,94 @@ func websocketHandler(ws *websocket.Conn) {
 	fmt.Println("New websocket client via ws")
 	defer ws.Close()
 
+	client := Client{ws: ws, start: time.Now().UTC()}
+	clients = append(clients, client)
+//	client.Read()
+
 	msg := make([]byte, 512)
 
-	go func() {
-		for {
-			n := 0
-			n, err := ws.Read(msg)
-//			fmt.Printf("Letti %d bytes \n",n)
+	for {
+		n := 0
+		n, err := ws.Read(msg)
+		//			fmt.Printf("Letti %d bytes \n",n)
+		if err != nil {
+			fmt.Println("Error while reading from remote websocket")
+			break
+		}
+		// fmt.Printf("R: <%s>\n",msg[:n])
+		m := strings.Trim(string(msg[:n]), "\r\n"+string(0))
+		//			fmt.Printf("Received: <%s>\n", m)
+
+		r, _ := regexp.Compile("readMib")
+		// matched, err := regexp.MatchString("readMib", m)
+		// fmt.Println(matched, err)
+
+		if m == "list" {
+			//				fmt.Println("cpes list")
+			var cpeListMessage string
+
+			for key, value := range cpes {
+				fmt.Println("Key:", key, "Value:", value.OUI)
+//				cpeListMessage += "CPE #" + key + " with OUI " + value.OUI + " ["+value.Queue.Size()+"]\n"
+				cpeListMessage += fmt.Sprintf("CPE #%s with OUI %s [%d]\n", key, value.OUI, value.Queue.Size())
+				// strings.Join(cpeListMessage, "CPE #"+key+" with OUI "+value.OUI+"\n")
+			}
+
+			_, err := ws.Write([]byte(cpeListMessage))
 			if err != nil {
-				fmt.Println("Error while reading from remote websocket")
+				fmt.Println("Error while writing to remote websocket")
 				break
 			}
-			// fmt.Printf("R: <%s>\n",msg[:n])
-			m := strings.Trim(string(msg[:n]), "\r\n"+string(0))
-//			fmt.Printf("Received: <%s>\n", m)
 
-			r, _ := regexp.Compile("readMib")
-			// matched, err := regexp.MatchString("readMib", m)
-			// fmt.Println(matched, err)
+			// client requests a GetParametersValues to cpe with serial
+			//serial := "1"
+			//leaf := "Device.Time."
+			// enqueue this command with the ws number to get the answer back
 
-			if m == "list" {
-//				fmt.Println("cpes list")
-				var cpeListMessage string
-
-				for key, value := range cpes {
-					fmt.Println("Key:", key, "Value:", value.OUI)
-					cpeListMessage += "CPE #"+key+" with OUI "+value.OUI+"\n"
-					// strings.Join(cpeListMessage, "CPE #"+key+" with OUI "+value.OUI+"\n")
-				}
-
-				_, err := ws.Write([]byte(cpeListMessage))
-				if err != nil {
-					fmt.Println("Error while writing to remote websocket")
-					break
-				}
-
-				// client requests a GetParametersValues to cpe with serial
-				//serial := "1"
-				//leaf := "Device.Time."
-				// enqueue this command with the ws number to get the answer back
-
-			} else if m == "version" {
-				_,err := ws.Write([]byte(fmt.Sprintf("MosesAcs Daemon %s", Version)))
-				if err != nil {
-					fmt.Println("Error while writing to remote websocket")
-					break
-				}
-
-			} else if r.MatchString(m) == true {
-				fmt.Println("READ MIB")
-				re := regexp.MustCompile(`\s`)
-				i := re.Split("readMib 10 InternetGatewayDevice.", -1)
-				cpeSerial, _ := strconv.Atoi(i[1])
-				fmt.Printf("CPE %d\n", cpeSerial)
-				fmt.Printf("LEAF %s\n", i[2])
-
+		} else if m == "version" {
+			_, err := ws.Write([]byte(fmt.Sprintf("MosesAcs Daemon %s", Version)))
+			if err != nil {
+				fmt.Println("Error while writing to remote websocket")
+				break
 			}
 
+		} else if m == "status" {
+			var response string
+			for i:= range clients {
+				response += clients[i].String()
+			}
+
+			_, err := ws.Write([]byte(response))
+			if err != nil {
+				fmt.Println("Error while writing to remote websocket")
+				break
+			}
+		} else if r.MatchString(m) == true {
+			fmt.Println("READ MIB")
+			re := regexp.MustCompile(`\s`)
+			i := re.Split("readMib 2 InternetGatewayDevice.", -1)
+			cpeSerial, _ := strconv.Atoi(i[1])
+			fmt.Printf("CPE %d\n", cpeSerial)
+			fmt.Printf("LEAF %s\n", i[2])
+//			req := Request{"1", ws, cwmp.GetParameterValues(i[2])}
+
+			if _,exists := cpes[i[1]]; exists {
+				cpes[i[1]].Queue.Enqueue(cwmp.GetParameterValues(i[2]))
+				if cpes[i[1]].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(i[1])
+				}
+			} else {
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
+			}
 		}
-		fmt.Println("leaving from read routine")
-	}()
-
-	for {
-
-		// _, err := ws.Write([]byte("ciao"))
-		// if err != nil {
-		// 	fmt.Println("Error while writing to remote websocket")
-		// 	break
-		// }
-		// fmt.Printf("Send: %s\n", "ciao")
-		time.Sleep(2 * time.Second)
 	}
-	fmt.Println("leaving from write routine")
+	fmt.Println("leaving from read routine")
 
-	fmt.Println("websocket client has gone")
 }
 
 func doConnectionRequest(SerialNumber string) {
+	fmt.Println("issuing a connection request to CPE", SerialNumber)
 	http.Get(cpes[SerialNumber].ConnectionRequestURL)
 }
 

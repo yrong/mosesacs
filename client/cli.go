@@ -96,11 +96,13 @@ func processCommand(cmd string) {
 	case "version":
 		client.Write("version")
 	case "readmib":
-		client.Write("readMib 10 InternetGatewayDevice.")
+		client.Write("readMib 2 InternetGatewayDevice.")
 	case "list":
 		client.Write("list")
 	case "num":
 		client.Write("num")
+	case "status":
+		client.Write("status")
 	default:
 		fmt.Println("Unknown command")
 	}
