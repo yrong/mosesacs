@@ -77,7 +77,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if messageType != "Inform" {
 		if cookie, err := r.Cookie("mosesacs"); err == nil {
 			cpe = sessions[cookie.Value]
-			fmt.Println("recuperato CPE",cpe)
 		} else {
 			fmt.Println("cookie 'mosesacs' missing")
 			w.WriteHeader(401)
@@ -121,7 +120,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if cpe.Waiting != nil {
-			fmt.Println("devo mandare indietro questa risposta")
 			if _, err := cpe.Waiting.Websocket.Write([]byte(body)); err != nil {
 				fmt.Println(err)
 			}
@@ -134,8 +132,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 //			fmt.Println("sending "+req.CwmpMessage)
 			fmt.Fprintf(w, req.CwmpMessage)
 			cpe.Waiting = &req
-			fmt.Println("setting Waiting to req",req)
-			fmt.Println("cpe vale",cpe)
 		} else {
 			w.WriteHeader(204)
 		}
