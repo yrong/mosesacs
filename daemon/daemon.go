@@ -62,13 +62,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	var cpe cwmp.CPE
 
 	if messageType != "Inform" {
-		if cookie, err := r.Cookie("mosesacs"); err != nil && cookie != nil {
-			fmt.Println(cookie)
-			fmt.Println("found cookie" + cookie.Value)
+		if cookie, err := r.Cookie("mosesacs"); err == nil {
 			cpe = sessions[cookie.Value]
 		} else {
 			fmt.Println("cookie 'mosesacs' missing")
-			w.WriteHeader(403)
+			w.WriteHeader(401)
 			return
 		}
 	}
@@ -110,7 +108,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		// Got Empty Post or a Response. Now check for any event to send, otherwise 204
 		if cpe.Queue.Size() > 0 {
 			req := cpe.Queue.Dequeue().(Request)
-			fmt.Println("sending"+req.CwmpMessage)
+			fmt.Println("sending "+req.CwmpMessage)
+			fmt.Fprintf(w, req.CwmpMessage)
 		} else {
 			w.WriteHeader(204)
 		}
