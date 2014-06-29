@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	//	"strings"
 	"code.google.com/p/go.net/websocket"
 	"encoding/xml"
 	"os"
@@ -14,8 +13,8 @@ import (
 	"github.com/oleiade/lane"
 	"strings"
 	"time"
-	"regexp"
-	"strconv"
+//	"regexp"
+//	"strconv"
 )
 
 const Version = "0.1.1"
@@ -87,9 +86,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if messageType == "Inform" {
 		var Inform cwmp.CWMPInform
 		xml.Unmarshal(tmp, &Inform)
-		fmt.Println(Inform)
-
-		fmt.Println("Serial:", Inform.DeviceId.SerialNumber)
+		fmt.Println("New connection from CPE #"+Inform.DeviceId.SerialNumber)
 
 		if _,exists := cpes[Inform.DeviceId.SerialNumber]; !exists {
 			cpes[Inform.DeviceId.SerialNumber] = CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI, Queue: lane.NewQueue()}
@@ -99,7 +96,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("Received an Inform from %s (%d bytes)", r.RemoteAddr, len)
 
-		expiration := time.Now().AddDate(0,0,1)
+		expiration := time.Now().AddDate(0,0,1) // expires in 1 day
 		hash := "asdadasd"
 
 		cookie := http.Cookie{Name: "mosesacs", Value: hash, Expires: expiration}
@@ -157,16 +154,9 @@ func websocketHandler(ws *websocket.Conn) {
 			fmt.Println("Error while reading from remote websocket")
 			break
 		}
-		// fmt.Printf("R: <%s>\n",msg[:n])
 		m := strings.Trim(string(msg[:n]), "\r\n"+string(0))
-		//			fmt.Printf("Received: <%s>\n", m)
-
-		r, _ := regexp.Compile("readMib")
-		// matched, err := regexp.MatchString("readMib", m)
-		// fmt.Println(matched, err)
 
 		if m == "list" {
-			//				fmt.Println("cpes list")
 			var cpeListMessage string
 
 			for key, value := range cpes {
@@ -205,14 +195,13 @@ func websocketHandler(ws *websocket.Conn) {
 				fmt.Println("Error while writing to remote websocket")
 				break
 			}
-		} else if r.MatchString(m) == true {
+		} else if strings.Contains(m, "readMib") {
 			fmt.Println("READ MIB")
-			re := regexp.MustCompile(`\s`)
-			i := re.Split("readMib 2 InternetGatewayDevice.", -1)
-			cpeSerial, _ := strconv.Atoi(i[1])
-			fmt.Printf("CPE %d\n", cpeSerial)
-			fmt.Printf("LEAF %s\n", i[2])
-			req := Request{"1", ws, cwmp.GetParameterValues(i[2])}
+			i := strings.Split(m, " ")
+//			cpeSerial, _ := strconv.Atoi(i[1])
+//			fmt.Printf("CPE %d\n", cpeSerial)
+//			fmt.Printf("LEAF %s\n", i[2])
+			req := Request{i[1], ws, cwmp.GetParameterValues(i[2])}
 
 			if _,exists := cpes[i[1]]; exists {
 				cpes[i[1]].Queue.Enqueue(req)

@@ -33,7 +33,7 @@ func Run(url string) {
 		}
 	}()
 
-	baseCmds := []string{"exit", "help", "version", "list", "status", "shutdown", "uptime"}
+	baseCmds := []string{"exit", "help", "version", "list", "status", "shutdown", "uptime", "readMib"}
 
 	line.SetCompleter(func(line string) (c []string) {
 		for _, n := range baseCmds {
@@ -92,16 +92,14 @@ func quit(url string, line *liner.State) {
 }
 
 func processCommand(cmd string) {
-	switch cmd {
-	case "version":
+	switch {
+	case strings.Contains(cmd, "version"):
 		client.Write("version")
-	case "readmib":
-		client.Write("readMib 2 InternetGatewayDevice.")
-	case "list":
+	case strings.Contains(cmd, "readMib"):
+		client.Write(cmd)
+	case strings.Contains(cmd, "list"):
 		client.Write("list")
-	case "num":
-		client.Write("num")
-	case "status":
+	case strings.Contains(cmd, "status"):
 		client.Write("status")
 	default:
 		fmt.Println("Unknown command")
