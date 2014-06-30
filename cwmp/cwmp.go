@@ -19,12 +19,24 @@ type CWMPMessage struct {
 	XMLName xml.Name
 }
 
-type Event struct {
+type EventStruct struct {
+	EventCode string
+	CommandKey string
+
 }
 
 type CWMPInform struct {
 	DeviceId DeviceID `xml:"Body>Inform>DeviceId"`
-	Events   []Event
+	Events   []EventStruct  `xml:"Body>Inform>Event>EventStruct"`
+}
+
+func (i *CWMPInform) GetEvents() string {
+	res := ""
+	for idx := range i.Events {
+		res += i.Events[idx].EventCode
+	}
+
+	return res
 }
 
 type DeviceID struct {
