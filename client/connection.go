@@ -31,8 +31,8 @@ func (conn *Connection) Start(url string) {
 }
 
 func (conn *Connection) read() {
-	var msg = make([]byte, 512)
 	for {
+		var msg = make([]byte, 512)
 		if _, err := conn.ws.Read(msg); err != nil {
 			conn.Incoming <- "quit"
 		}
