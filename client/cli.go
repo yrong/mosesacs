@@ -74,6 +74,9 @@ func Run(url string) {
 func receiver() {
 	for {
 		msg := <-client.Incoming
+		if msg == "quit" {
+			quit("TODO", line)
+		}
 		line.PrintAbovePrompt(string(msg))
 	}
 }
