@@ -35,6 +35,8 @@ type CPE struct {
 	State                string
 	Queue 				 *lane.Queue
 	Waiting				 *Request
+	HardwareVersion      string
+	LastConnection		 time.Time
 }
 
 type Message struct {
@@ -87,18 +89,28 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		var Inform cwmp.CWMPInform
 		xml.Unmarshal(tmp, &Inform)
 
-		if _,exists := cpes[Inform.DeviceId.SerialNumber]; !exists {
-			cpes[Inform.DeviceId.SerialNumber] = CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI, Queue: lane.NewQueue()}
-		}
-		obj := cpes[Inform.DeviceId.SerialNumber]
-		cpe := &obj
-
 		var addr string
 		if r.Header.Get("X-Real-Ip") != "" {
 			addr = r.Header.Get("X-Real-Ip")
 		} else {
 			addr = r.RemoteAddr
 		}
+
+		if _,exists := cpes[Inform.DeviceId.SerialNumber]; !exists {
+			fmt.Println ("found ConnectionRequest " + Inform.GetConnectionRequest())
+			cpes[Inform.DeviceId.SerialNumber] = CPE{
+				SerialNumber: Inform.DeviceId.SerialNumber,
+				LastConnection: time.Now().UTC(),
+				SoftwareVersion: Inform.GetSoftwareVersion(),
+				HardwareVersion: Inform.GetHardwareVersion(),
+				ExternalIPAddress: addr,
+				ConnectionRequestURL: Inform.GetConnectionRequest(),
+				OUI: Inform.DeviceId.OUI,
+				Queue: lane.NewQueue()}
+		}
+		obj := cpes[Inform.DeviceId.SerialNumber]
+		cpe := &obj
+
 		log.Printf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents())
 
 		expiration := time.Now().AddDate(0,0,1) // expires in 1 day
@@ -167,7 +179,7 @@ func websocketHandler(ws *websocket.Conn) {
 			for key, value := range cpes {
 				fmt.Println("Key:", key, "Value:", value.OUI)
 //				cpeListMessage += "CPE #" + key + " with OUI " + value.OUI + " ["+value.Queue.Size()+"]\n"
-				cpeListMessage += fmt.Sprintf("CPE #%s with OUI %s [%d]\n", key, value.OUI, value.Queue.Size())
+				cpeListMessage += fmt.Sprintf("CPE #%s with OUI %s, IP: %s, CR: %s, SW: %s, HW: %s [%d] last: %s\n", key, value.OUI, value.ExternalIPAddress, value.ConnectionRequestURL, value.SoftwareVersion, value.HardwareVersion, value.Queue.Size(), value.LastConnection)
 				// strings.Join(cpeListMessage, "CPE #"+key+" with OUI "+value.OUI+"\n")
 			}
 
@@ -230,7 +242,8 @@ func websocketHandler(ws *websocket.Conn) {
 
 func doConnectionRequest(SerialNumber string) {
 	fmt.Println("issuing a connection request to CPE", SerialNumber)
-	http.Get(cpes[SerialNumber].ConnectionRequestURL)
+//	http.Get(cpes[SerialNumber].ConnectionRequestURL)
+	Auth("user", "pass", cpes[SerialNumber].ConnectionRequestURL)
 }
 
 func Run(port *int) {

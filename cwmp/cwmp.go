@@ -25,9 +25,15 @@ type EventStruct struct {
 
 }
 
+type ParameterValueStruct struct {
+	Name string
+	Value string
+}
+
 type CWMPInform struct {
 	DeviceId DeviceID `xml:"Body>Inform>DeviceId"`
 	Events   []EventStruct  `xml:"Body>Inform>Event>EventStruct"`
+	ParameterList []ParameterValueStruct `xml:"Body>Inform>ParameterList>ParameterValueStruct"`
 }
 
 func (i *CWMPInform) GetEvents() string {
@@ -37,6 +43,36 @@ func (i *CWMPInform) GetEvents() string {
 	}
 
 	return res
+}
+
+func (i *CWMPInform) GetConnectionRequest() string {
+	for idx := range i.ParameterList {
+		if i.ParameterList[idx].Name == "InternetGatewayDevice.ManagementServer.ConnectionRequestURL" {
+			return i.ParameterList[idx].Value
+		}
+	}
+
+	return ""
+}
+
+func (i *CWMPInform) GetSoftwareVersion() string {
+	for idx := range i.ParameterList {
+		if i.ParameterList[idx].Name == "InternetGatewayDevice.DeviceInfo.SoftwareVersion" {
+			return i.ParameterList[idx].Value
+		}
+	}
+
+	return ""
+}
+
+func (i *CWMPInform) GetHardwareVersion() string {
+	for idx := range i.ParameterList {
+		if i.ParameterList[idx].Name == "InternetGatewayDevice.DeviceInfo.HardwareVersion" {
+			return i.ParameterList[idx].Value
+		}
+	}
+
+	return ""
 }
 
 type DeviceID struct {
