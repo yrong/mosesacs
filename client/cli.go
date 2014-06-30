@@ -33,7 +33,7 @@ func Run(url string) {
 		}
 	}()
 
-	baseCmds := []string{"exit", "help", "version", "list", "status", "shutdown", "uptime", "readMib"}
+	baseCmds := []string{"exit", "help", "version", "list", "status", "shutdown", "uptime", "readMib", "GetParameterNames"}
 
 	line.SetCompleter(func(line string) (c []string) {
 		for _, n := range baseCmds {
@@ -99,6 +99,8 @@ func processCommand(cmd string) {
 	case strings.Contains(cmd, "version"):
 		client.Write("version")
 	case strings.Contains(cmd, "readMib"):
+		client.Write(cmd)
+	case strings.Contains(cmd, "GetParameterNames"):
 		client.Write(cmd)
 	case strings.Contains(cmd, "list"):
 		client.Write("list")

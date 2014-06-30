@@ -17,7 +17,7 @@ import (
 //	"strconv"
 )
 
-const Version = "0.1.6"
+const Version = "0.1.7"
 
 type Request struct {
 	Id          string
@@ -213,12 +213,24 @@ func websocketHandler(ws *websocket.Conn) {
 				break
 			}
 		} else if strings.Contains(m, "readMib") {
-			fmt.Println("READ MIB")
 			i := strings.Split(m, " ")
 //			cpeSerial, _ := strconv.Atoi(i[1])
 //			fmt.Printf("CPE %d\n", cpeSerial)
 //			fmt.Printf("LEAF %s\n", i[2])
 			req := Request{i[1], ws, cwmp.GetParameterValues(i[2])}
+
+			if _,exists := cpes[i[1]]; exists {
+				cpes[i[1]].Queue.Enqueue(req)
+				if cpes[i[1]].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(i[1])
+				}
+			} else {
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
+			}
+		} else if strings.Contains(m, "GetParameterNames") {
+			i := strings.Split(m, " ")
+			req := Request{i[1], ws, cwmp.GetParameterNames(i[2])}
 
 			if _,exists := cpes[i[1]]; exists {
 				cpes[i[1]].Queue.Enqueue(req)
