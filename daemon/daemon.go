@@ -120,7 +120,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			if _, err := cpe.Waiting.Websocket.Write([]byte(body)); err != nil {
 				fmt.Println(err)
 			}
-			cpe.Waiting = &Request{}
+			cpe.Waiting = nil
 		}
 
 		// Got Empty Post or a Response. Now check for any event to send, otherwise 204
@@ -187,7 +187,7 @@ func websocketHandler(ws *websocket.Conn) {
 		} else if m == "status" {
 			var response string
 			for i:= range clients {
-				response += clients[i].String()
+				response += clients[i].String() + "\n"
 			}
 
 			_, err := ws.Write([]byte(response))
@@ -214,8 +214,13 @@ func websocketHandler(ws *websocket.Conn) {
 			}
 		}
 	}
-	fmt.Println("leaving from read routine")
+	fmt.Println("ws closed, leaving read routine")
 
+	for i:= range clients {
+		if clients[i].ws == ws {
+			clients = append(clients[:i], clients[i+1:]...)
+		}
+	}
 }
 
 func doConnectionRequest(SerialNumber string) {
