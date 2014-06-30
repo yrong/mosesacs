@@ -51,7 +51,7 @@ func GetParameterValues(leaf string) string {
   <soap:Header/>
   <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
     <cwmp:GetParameterValues>
-      <ParameterrNames>
+      <ParameterNames>
       	<string>`+leaf+`</string>
       </ParameterNames>
     </cwmp:GetParameterValues>
