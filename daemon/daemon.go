@@ -86,7 +86,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if messageType == "Inform" {
 		var Inform cwmp.CWMPInform
 		xml.Unmarshal(tmp, &Inform)
-		fmt.Println("New connection from CPE #"+Inform.DeviceId.SerialNumber)
 
 		if _,exists := cpes[Inform.DeviceId.SerialNumber]; !exists {
 			cpes[Inform.DeviceId.SerialNumber] = CPE{SerialNumber: Inform.DeviceId.SerialNumber, OUI: Inform.DeviceId.OUI, Queue: lane.NewQueue()}
@@ -94,7 +93,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		obj := cpes[Inform.DeviceId.SerialNumber]
 		cpe := &obj
 
-		log.Printf("Received an Inform from %s (%d bytes)", r.RemoteAddr, len)
+		var addr string
+		if r.Header.Get("X-Real-Ip") != "" {
+			addr = r.Header.Get("X-Real-Ip")
+		} else {
+			addr = r.RemoteAddr
+		}
+		log.Printf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents())
 
 		expiration := time.Now().AddDate(0,0,1) // expires in 1 day
 		hash := "asdadasd"
