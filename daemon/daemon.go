@@ -17,7 +17,7 @@ import (
 //	"strconv"
 )
 
-const Version = "0.1.3"
+const Version = "0.1.4"
 
 type Request struct {
 	Id          string
