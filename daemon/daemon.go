@@ -100,7 +100,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println ("found ConnectionRequest " + Inform.GetConnectionRequest())
 			cpes[Inform.DeviceId.SerialNumber] = CPE{
 				SerialNumber: Inform.DeviceId.SerialNumber,
-				LastConnection: time.Now().Local,
+				LastConnection: time.Now().UTC(),
 				SoftwareVersion: Inform.GetSoftwareVersion(),
 				HardwareVersion: Inform.GetHardwareVersion(),
 				ExternalIPAddress: addr,
@@ -110,9 +110,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		obj := cpes[Inform.DeviceId.SerialNumber]
 		cpe := &obj
-		cpe.LastConnection = time.Now().Local()
+		cpe.LastConnection = time.Now().UTC()
 
 		log.Printf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents())
+		sendAll(fmt.Sprintf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents()))
 
 		expiration := time.Now().AddDate(0,0,1) // expires in 1 day
 		hash := "asdadasd"
@@ -204,7 +205,7 @@ func websocketHandler(ws *websocket.Conn) {
 
 		} else if m == "status" {
 			var response string
-			for i:= range clients {
+			for i := range clients {
 				response += clients[i].String() + "\n"
 			}
 
@@ -246,9 +247,17 @@ func websocketHandler(ws *websocket.Conn) {
 	}
 	fmt.Println("ws closed, leaving read routine")
 
-	for i:= range clients {
+	for i := range clients {
 		if clients[i].ws == ws {
 			clients = append(clients[:i], clients[i+1:]...)
+		}
+	}
+}
+
+func sendAll(msg string) {
+	for i := range clients {
+		if _, err := clients[i].ws.Write([]byte(msg)); err != nil {
+			fmt.Println(err)
 		}
 	}
 }
