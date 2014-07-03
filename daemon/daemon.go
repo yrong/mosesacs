@@ -17,7 +17,7 @@ import (
 //	"strconv"
 )
 
-const Version = "0.1.7"
+const Version = "0.1.8"
 
 type Request struct {
 	Id          string
@@ -100,7 +100,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println ("found ConnectionRequest " + Inform.GetConnectionRequest())
 			cpes[Inform.DeviceId.SerialNumber] = CPE{
 				SerialNumber: Inform.DeviceId.SerialNumber,
-				LastConnection: time.Now().UTC(),
+				LastConnection: time.Now().Local,
 				SoftwareVersion: Inform.GetSoftwareVersion(),
 				HardwareVersion: Inform.GetHardwareVersion(),
 				ExternalIPAddress: addr,
@@ -110,6 +110,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		obj := cpes[Inform.DeviceId.SerialNumber]
 		cpe := &obj
+		cpe.LastConnection = time.Now().Local()
 
 		log.Printf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents())
 
