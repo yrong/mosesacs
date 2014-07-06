@@ -44,16 +44,20 @@ type Message struct {
 	Message      string
 }
 
+type WsMessage struct {
+	Cmd string
+}
+
 var cpes map[string]CPE      // by serial
 var sessions map[string]*CPE  // by session cookie
 var clients []Client
 
 
-func (req Request) reply(msg string) {
-	if _, err := req.Websocket.Write([]byte(msg)); err != nil {
-
-	}
-}
+//func (req Request) reply(msg string) {
+//	if _, err := req.Websocket.Write([]byte(msg)); err != nil {
+//
+//	}
+//}
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	//	log.Printf("New connection coming from %s", r.RemoteAddr)
@@ -136,8 +140,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if cpe.Waiting != nil {
-			if _, err := cpe.Waiting.Websocket.Write([]byte(body)); err != nil {
-				fmt.Println(err)
+			msg := new(WsMessage)
+			msg.Cmd = body
+
+			if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
+				fmt.Println("error while sending back answer:",err)
 			}
 			cpe.Waiting = nil
 		}
@@ -163,18 +170,15 @@ func websocketHandler(ws *websocket.Conn) {
 	clients = append(clients, client)
 //	client.Read()
 
-	msg := make([]byte, 512)
-
 	for {
-		n := 0
-		n, err := ws.Read(msg)
-		//			fmt.Printf("Letti %d bytes \n",n)
+		var msg WsMessage
+		err := websocket.JSON.Receive(ws, &msg)
 		if err != nil {
-			fmt.Println("Error while reading from remote websocket")
+			fmt.Println("error while Receive:",err)
 			break
 		}
-		m := strings.Trim(string(msg[:n]), "\r\n"+string(0))
 
+		m := msg.Cmd
 		if m == "list" {
 			var cpeListMessage string
 
@@ -185,11 +189,8 @@ func websocketHandler(ws *websocket.Conn) {
 				// strings.Join(cpeListMessage, "CPE #"+key+" with OUI "+value.OUI+"\n")
 			}
 
-			_, err := ws.Write([]byte(cpeListMessage))
-			if err != nil {
-				fmt.Println("Error while writing to remote websocket")
-				break
-			}
+			client.Send(cpeListMessage)
+
 
 			// client requests a GetParametersValues to cpe with serial
 			//serial := "1"
@@ -197,11 +198,7 @@ func websocketHandler(ws *websocket.Conn) {
 			// enqueue this command with the ws number to get the answer back
 
 		} else if m == "version" {
-			_, err := ws.Write([]byte(fmt.Sprintf("MosesAcs Daemon %s", Version)))
-			if err != nil {
-				fmt.Println("Error while writing to remote websocket")
-				break
-			}
+			client.Send(fmt.Sprintf("MosesAcs Daemon %s", Version))
 
 		} else if m == "status" {
 			var response string
@@ -209,11 +206,8 @@ func websocketHandler(ws *websocket.Conn) {
 				response += clients[i].String() + "\n"
 			}
 
-			_, err := ws.Write([]byte(response))
-			if err != nil {
-				fmt.Println("Error while writing to remote websocket")
-				break
-			}
+			client.Send(response)
+
 		} else if strings.Contains(m, "readMib") {
 			i := strings.Split(m, " ")
 //			cpeSerial, _ := strconv.Atoi(i[1])
@@ -256,9 +250,7 @@ func websocketHandler(ws *websocket.Conn) {
 
 func sendAll(msg string) {
 	for i := range clients {
-		if _, err := clients[i].ws.Write([]byte(msg)); err != nil {
-			fmt.Println(err)
-		}
+		clients[i].Send(msg)
 	}
 }
 

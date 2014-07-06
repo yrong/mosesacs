@@ -22,3 +22,13 @@ func (client *Client) String() string {
 	}
 	return fmt.Sprintf("%s is up from %s", addr, uptime)
 }
+
+func (client *Client) Send(cmd string) {
+	msg := new(WsMessage)
+	msg.Cmd = cmd
+
+	err := websocket.JSON.Send(client.ws, msg)
+	if err != nil {
+		fmt.Println("error while Writing:",err)
+	}
+}

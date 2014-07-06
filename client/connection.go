@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	//	"strings"
+	"github.com/lucacervasio/mosesacs/daemon"
 )
 
 type Connection struct {
@@ -32,13 +33,15 @@ func (conn *Connection) Start(url string) {
 
 func (conn *Connection) read() {
 	for {
-		var msg = make([]byte, 512)
-		if _, err := conn.ws.Read(msg); err != nil {
+		var msg daemon.WsMessage
+		err := websocket.JSON.Receive(conn.ws, &msg)
+		if err != nil {
+			fmt.Println("error while Reading:",err)
 			conn.Incoming <- "quit"
 			break
 		}
 
-		conn.Incoming <- string(msg)
+		conn.Incoming <- msg.Cmd
 	}
 }
 
@@ -47,8 +50,12 @@ func (conn *Connection) Close() {
 }
 
 func (conn *Connection) Write(cmd string) {
-	var ws = conn.ws
-	if _, err := ws.Write([]byte(cmd)); err != nil {
+	msg := new(daemon.WsMessage)
+	msg.Cmd = cmd
+
+	err := websocket.JSON.Send(conn.ws, msg)
+	if err != nil {
+		fmt.Println("error while Writing:",err)
 		conn.Incoming <- "quit"
 	}
 }
