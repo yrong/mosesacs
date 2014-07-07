@@ -1,20 +1,20 @@
 package daemon
 
 import (
+	"code.google.com/p/go.net/websocket"
+	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"code.google.com/p/go.net/websocket"
-	"encoding/xml"
 	"os"
 	//"encoding/json"
 	"github.com/lucacervasio/mosesacs/cwmp"
 	"github.com/oleiade/lane"
 	"strings"
 	"time"
-//	"regexp"
-//	"strconv"
+	//	"regexp"
+	//	"strconv"
 )
 
 const Version = "0.1.10"
@@ -33,10 +33,10 @@ type CPE struct {
 	SoftwareVersion      string
 	ExternalIPAddress    string
 	State                string
-	Queue 				 *lane.Queue
-	Waiting				 *Request
+	Queue                *lane.Queue
+	Waiting              *Request
 	HardwareVersion      string
-	LastConnection		 time.Time
+	LastConnection       time.Time
 }
 
 type Message struct {
@@ -49,9 +49,8 @@ type WsMessage struct {
 }
 
 var cpes map[string]CPE      // by serial
-var sessions map[string]*CPE  // by session cookie
+var sessions map[string]*CPE // by session cookie
 var clients []Client
-
 
 //func (req Request) reply(msg string) {
 //	if _, err := req.Websocket.Write([]byte(msg)); err != nil {
@@ -66,8 +65,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	body := string(tmp)
 	len := len(body)
-
-
 
 	//	log.Printf("body: %v", body)
 	//	log.Printf("body length: %v", len)
@@ -100,17 +97,17 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			addr = r.RemoteAddr
 		}
 
-		if _,exists := cpes[Inform.DeviceId.SerialNumber]; !exists {
-			fmt.Println ("found ConnectionRequest " + Inform.GetConnectionRequest())
+		if _, exists := cpes[Inform.DeviceId.SerialNumber]; !exists {
+			fmt.Println("found ConnectionRequest " + Inform.GetConnectionRequest())
 			cpes[Inform.DeviceId.SerialNumber] = CPE{
-				SerialNumber: Inform.DeviceId.SerialNumber,
-				LastConnection: time.Now().UTC(),
-				SoftwareVersion: Inform.GetSoftwareVersion(),
-				HardwareVersion: Inform.GetHardwareVersion(),
-				ExternalIPAddress: addr,
+				SerialNumber:         Inform.DeviceId.SerialNumber,
+				LastConnection:       time.Now().UTC(),
+				SoftwareVersion:      Inform.GetSoftwareVersion(),
+				HardwareVersion:      Inform.GetHardwareVersion(),
+				ExternalIPAddress:    addr,
 				ConnectionRequestURL: Inform.GetConnectionRequest(),
-				OUI: Inform.DeviceId.OUI,
-				Queue: lane.NewQueue()}
+				OUI:                  Inform.DeviceId.OUI,
+				Queue:                lane.NewQueue()}
 		}
 		obj := cpes[Inform.DeviceId.SerialNumber]
 		cpe := &obj
@@ -119,7 +116,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents())
 		sendAll(fmt.Sprintf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents()))
 
-		expiration := time.Now().AddDate(0,0,1) // expires in 1 day
+		expiration := time.Now().AddDate(0, 0, 1) // expires in 1 day
 		hash := "asdadasd"
 
 		cookie := http.Cookie{Name: "mosesacs", Value: hash, Expires: expiration}
@@ -144,7 +141,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			msg.Cmd = body
 
 			if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
-				fmt.Println("error while sending back answer:",err)
+				fmt.Println("error while sending back answer:", err)
 			}
 			cpe.Waiting = nil
 		}
@@ -152,7 +149,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		// Got Empty Post or a Response. Now check for any event to send, otherwise 204
 		if cpe.Queue.Size() > 0 {
 			req := cpe.Queue.Dequeue().(Request)
-//			fmt.Println("sending "+req.CwmpMessage)
+			//			fmt.Println("sending "+req.CwmpMessage)
 			fmt.Fprintf(w, req.CwmpMessage)
 			cpe.Waiting = &req
 		} else {
@@ -166,10 +163,10 @@ func periodicWsChecker(c *Client, quit chan bool) {
 	ticker := time.NewTicker(30 * time.Second)
 	for {
 		select {
-		case <- ticker.C:
-			fmt.Println("new tick on client:",c)
+		case <-ticker.C:
+			fmt.Println("new tick on client:", c)
 			c.Send("ping")
-		case <- quit:
+		case <-quit:
 			fmt.Println("received quit command for periodicWsChecker")
 			ticker.Stop()
 			return
@@ -181,10 +178,9 @@ func websocketHandler(ws *websocket.Conn) {
 	fmt.Println("New websocket client via ws")
 	defer ws.Close()
 
-
 	client := Client{ws: ws, start: time.Now().UTC()}
 	clients = append(clients, client)
-//	client.Read()
+	//	client.Read()
 
 	quit := make(chan bool)
 	go periodicWsChecker(&client, quit)
@@ -193,7 +189,7 @@ func websocketHandler(ws *websocket.Conn) {
 		var msg WsMessage
 		err := websocket.JSON.Receive(ws, &msg)
 		if err != nil {
-			fmt.Println("error while Receive:",err)
+			fmt.Println("error while Receive:", err)
 			quit <- true
 			break
 		}
@@ -203,14 +199,13 @@ func websocketHandler(ws *websocket.Conn) {
 			var cpeListMessage string
 
 			for key, value := range cpes {
-//				fmt.Println("Key:", key, "Value:", value.OUI)
-//				cpeListMessage += "CPE #" + key + " with OUI " + value.OUI + " ["+value.Queue.Size()+"]\n"
+				//				fmt.Println("Key:", key, "Value:", value.OUI)
+				//				cpeListMessage += "CPE #" + key + " with OUI " + value.OUI + " ["+value.Queue.Size()+"]\n"
 				cpeListMessage += fmt.Sprintf("CPE #%s with OUI %s, IP: %s, CR: %s, SW: %s, HW: %s [%d] last: %s\n", key, value.OUI, value.ExternalIPAddress, value.ConnectionRequestURL, value.SoftwareVersion, value.HardwareVersion, value.Queue.Size(), value.LastConnection)
 				// strings.Join(cpeListMessage, "CPE #"+key+" with OUI "+value.OUI+"\n")
 			}
 
 			client.Send(cpeListMessage)
-
 
 			// client requests a GetParametersValues to cpe with serial
 			//serial := "1"
@@ -230,12 +225,12 @@ func websocketHandler(ws *websocket.Conn) {
 
 		} else if strings.Contains(m, "readMib") {
 			i := strings.Split(m, " ")
-//			cpeSerial, _ := strconv.Atoi(i[1])
-//			fmt.Printf("CPE %d\n", cpeSerial)
-//			fmt.Printf("LEAF %s\n", i[2])
+			//			cpeSerial, _ := strconv.Atoi(i[1])
+			//			fmt.Printf("CPE %d\n", cpeSerial)
+			//			fmt.Printf("LEAF %s\n", i[2])
 			req := Request{i[1], ws, cwmp.GetParameterValues(i[2])}
 
-			if _,exists := cpes[i[1]]; exists {
+			if _, exists := cpes[i[1]]; exists {
 				cpes[i[1]].Queue.Enqueue(req)
 				if cpes[i[1]].State != "Connected" {
 					// issue a connection request
@@ -248,7 +243,7 @@ func websocketHandler(ws *websocket.Conn) {
 			i := strings.Split(m, " ")
 			req := Request{i[1], ws, cwmp.GetParameterNames(i[2])}
 
-			if _,exists := cpes[i[1]]; exists {
+			if _, exists := cpes[i[1]]; exists {
 				cpes[i[1]].Queue.Enqueue(req)
 				if cpes[i[1]].State != "Connected" {
 					// issue a connection request
@@ -276,7 +271,7 @@ func sendAll(msg string) {
 
 func doConnectionRequest(SerialNumber string) {
 	fmt.Println("issuing a connection request to CPE", SerialNumber)
-//	http.Get(cpes[SerialNumber].ConnectionRequestURL)
+	//	http.Get(cpes[SerialNumber].ConnectionRequestURL)
 	Auth("user", "pass", cpes[SerialNumber].ConnectionRequestURL)
 }
 

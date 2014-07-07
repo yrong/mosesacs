@@ -1,16 +1,15 @@
 package daemon
 
 import (
-	"fmt"
 	"code.google.com/p/go.net/websocket"
+	"fmt"
 	"time"
 )
 
 type Client struct {
-	ws *websocket.Conn
+	ws    *websocket.Conn
 	start time.Time
 }
-
 
 func (client *Client) String() string {
 	uptime := time.Now().UTC().Sub(client.start)
@@ -29,6 +28,6 @@ func (client *Client) Send(cmd string) {
 
 	err := websocket.JSON.Send(client.ws, msg)
 	if err != nil {
-		fmt.Println("error while Writing:",err)
+		fmt.Println("error while Writing:", err)
 	}
 }

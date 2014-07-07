@@ -1,7 +1,7 @@
 package cwmp
 
 import (
-  "encoding/xml"
+	"encoding/xml"
 )
 
 type SoapEnvelope struct {
@@ -20,19 +20,18 @@ type CWMPMessage struct {
 }
 
 type EventStruct struct {
-	EventCode string
+	EventCode  string
 	CommandKey string
-
 }
 
 type ParameterValueStruct struct {
-	Name string
+	Name  string
 	Value string
 }
 
 type CWMPInform struct {
-	DeviceId DeviceID `xml:"Body>Inform>DeviceId"`
-	Events   []EventStruct  `xml:"Body>Inform>Event>EventStruct"`
+	DeviceId      DeviceID               `xml:"Body>Inform>DeviceId"`
+	Events        []EventStruct          `xml:"Body>Inform>Event>EventStruct"`
 	ParameterList []ParameterValueStruct `xml:"Body>Inform>ParameterList>ParameterValueStruct"`
 }
 
@@ -100,7 +99,7 @@ func GetParameterValues(leaf string) string {
   <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
     <cwmp:GetParameterValues>
       <ParameterNames>
-      	<string>`+leaf+`</string>
+      	<string>` + leaf + `</string>
       </ParameterNames>
     </cwmp:GetParameterValues>
   </soap:Body>
@@ -113,9 +112,19 @@ func GetParameterNames(leaf string) string {
   <soap:Header/>
   <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
     <cwmp:GetParameterNames>
-      <ParameterPath>`+leaf+`</ParameterPath>
+      <ParameterPath>` + leaf + `</ParameterPath>
       <NextLevel>1</NextLevel>
     </cwmp:GetParameterNames>
+  </soap:Body>
+</soap:Envelope>`
+}
+
+func FactoryReset() string {
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header/>
+  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+    <cwmp:FactoryReset/>
   </soap:Body>
 </soap:Envelope>`
 }
