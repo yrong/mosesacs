@@ -17,7 +17,7 @@ import (
 //	"strconv"
 )
 
-const Version = "0.1.8"
+const Version = "0.1.9"
 
 type Request struct {
 	Id          string
@@ -162,19 +162,39 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func periodicWsChecker(c *Client, quit chan bool) {
+	ticker := time.NewTicker(30 * time.Second)
+	for {
+		select {
+		case <- ticker.C:
+			fmt.Println("new tick on client:",c)
+			c.Send("ping")
+		case <- quit:
+			fmt.Println("received quit command for periodicWsChecker")
+			ticker.Stop()
+			return
+		}
+	}
+}
+
 func websocketHandler(ws *websocket.Conn) {
 	fmt.Println("New websocket client via ws")
 	defer ws.Close()
 
+
 	client := Client{ws: ws, start: time.Now().UTC()}
 	clients = append(clients, client)
 //	client.Read()
+
+	quit := make(chan bool)
+	go periodicWsChecker(&client, quit)
 
 	for {
 		var msg WsMessage
 		err := websocket.JSON.Receive(ws, &msg)
 		if err != nil {
 			fmt.Println("error while Receive:",err)
+			quit <- true
 			break
 		}
 
@@ -183,7 +203,7 @@ func websocketHandler(ws *websocket.Conn) {
 			var cpeListMessage string
 
 			for key, value := range cpes {
-				fmt.Println("Key:", key, "Value:", value.OUI)
+//				fmt.Println("Key:", key, "Value:", value.OUI)
 //				cpeListMessage += "CPE #" + key + " with OUI " + value.OUI + " ["+value.Queue.Size()+"]\n"
 				cpeListMessage += fmt.Sprintf("CPE #%s with OUI %s, IP: %s, CR: %s, SW: %s, HW: %s [%d] last: %s\n", key, value.OUI, value.ExternalIPAddress, value.ConnectionRequestURL, value.SoftwareVersion, value.HardwareVersion, value.Queue.Size(), value.LastConnection)
 				// strings.Join(cpeListMessage, "CPE #"+key+" with OUI "+value.OUI+"\n")
