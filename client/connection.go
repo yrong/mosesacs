@@ -41,7 +41,11 @@ func (conn *Connection) read() {
 			break
 		}
 
-		conn.Incoming <- msg.Cmd
+		if msg.Cmd == "ping" {
+			conn.Write("pong")
+		} else {
+			conn.Incoming <- msg.Cmd
+		}
 	}
 }
 

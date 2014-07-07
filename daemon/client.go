@@ -20,7 +20,7 @@ func (client *Client) String() string {
 	} else {
 		addr = client.ws.Request().RemoteAddr
 	}
-	return fmt.Sprintf("%s is up since %s", addr, uptime)
+	return fmt.Sprintf("%s has been up for %s", addr, uptime)
 }
 
 func (client *Client) Send(cmd string) {
