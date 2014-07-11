@@ -36,7 +36,7 @@ func (conn *Connection) read() {
 		var msg daemon.WsMessage
 		err := websocket.JSON.Receive(conn.ws, &msg)
 		if err != nil {
-			fmt.Println("error while Reading:",err)
+			fmt.Println("error while Reading:", err)
 			conn.Incoming <- "quit"
 			break
 		}
@@ -59,7 +59,7 @@ func (conn *Connection) Write(cmd string) {
 
 	err := websocket.JSON.Send(conn.ws, msg)
 	if err != nil {
-		fmt.Println("error while Writing:",err)
+		fmt.Println("error while Writing:", err)
 		conn.Incoming <- "quit"
 	}
 }

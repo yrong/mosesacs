@@ -8,8 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-
-	//	"time"
 )
 
 var line *liner.State
