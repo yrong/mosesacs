@@ -1,12 +1,15 @@
 package client
 
 import (
+	"encoding/xml"
 	"fmt"
 	"github.com/lucacervasio/liner"
+	"github.com/lucacervasio/mosesacs/cwmp"
 	"os"
 	"os/signal"
 	"strings"
-//	"time"
+
+	//	"time"
 )
 
 var line *liner.State
@@ -77,7 +80,33 @@ func receiver() {
 		if msg == "quit" {
 			quit("TODO", line)
 		}
-		line.PrintAbovePrompt(string(msg))
+
+		var e cwmp.SoapEnvelope
+		xml.Unmarshal([]byte(msg), &e)
+
+		if e.KindOf() == "GetParameterValuesResponse" {
+			var envelope cwmp.GetParameterValuesResponse
+			xml.Unmarshal([]byte(msg), &envelope)
+
+			for idx := range envelope.ParameterList {
+				line.PrintAbovePrompt(string(fmt.Sprintf("%s : %s", envelope.ParameterList[idx].Name, envelope.ParameterList[idx].Value)))
+			}
+
+		} else if e.KindOf() == "GetParameterNamesResponse" {
+			line.PrintAbovePrompt(string(msg))
+
+			var envelope cwmp.GetParameterNamesResponse
+			xml.Unmarshal([]byte(msg), &envelope)
+
+			for idx := range envelope.ParameterList {
+				line.PrintAbovePrompt(string(fmt.Sprintf("%s : %s", envelope.ParameterList[idx].Name, envelope.ParameterList[idx].Writable)))
+			}
+
+		} else {
+			line.PrintAbovePrompt(string(msg))
+
+		}
+
 	}
 }
 
