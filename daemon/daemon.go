@@ -11,6 +11,7 @@ import (
 	//"encoding/json"
 	"github.com/lucacervasio/mosesacs/cwmp"
 	"github.com/oleiade/lane"
+	"github.com/lucacervasio/mosesacs/www"
 	"strings"
 	"time"
 	//	"regexp"
@@ -275,6 +276,14 @@ func doConnectionRequest(SerialNumber string) {
 	Auth("user", "pass", cpes[SerialNumber].ConnectionRequestURL)
 }
 
+func handlerWWW(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(www.Index)
+	n, err := fmt.Fprint(w, www.Index)
+	fmt.Printf("bytes %d\n", n)
+	fmt.Println(err)
+
+}
+
 func Run(port *int) {
 	cpes = make(map[string]CPE)
 	sessions = make(map[string]*CPE)
@@ -285,6 +294,9 @@ func Run(port *int) {
 
 	fmt.Printf("Endpoint installed at http://0.0.0.0:%d/api for admin stuff\n", *port)
 	http.Handle("/api", websocket.Handler(websocketHandler))
+
+	fmt.Printf("WEB handler installed at http://0.0.0.0:%d/www\n", *port)
+	http.HandleFunc("/www", handlerWWW)
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {
