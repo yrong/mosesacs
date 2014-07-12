@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"fmt"
 	"time"
+	//	"github.com/lucacervasio/mosesacs/client"
 )
 
 type Client struct {
@@ -26,6 +27,13 @@ func (client *Client) Send(cmd string) {
 	msg := new(WsMessage)
 	msg.Cmd = cmd
 
+	err := websocket.JSON.Send(client.ws, msg)
+	if err != nil {
+		fmt.Println("error while Writing:", err)
+	}
+}
+
+func (client *Client) SendNew(msg *WsSendMessage) {
 	err := websocket.JSON.Send(client.ws, msg)
 	if err != nil {
 		fmt.Println("error while Writing:", err)

@@ -10,12 +10,13 @@ import (
 	"os"
 	//"encoding/json"
 	"github.com/lucacervasio/mosesacs/cwmp"
-	"github.com/oleiade/lane"
 	"github.com/lucacervasio/mosesacs/www"
+	"github.com/oleiade/lane"
 	"strings"
 	"time"
 	//	"regexp"
 	//	"strconv"
+	"encoding/json"
 )
 
 const Version = "0.1.10"
@@ -47,6 +48,15 @@ type Message struct {
 
 type WsMessage struct {
 	Cmd string
+}
+
+type WsSendMessage struct {
+	MsgType string
+	Data    json.RawMessage
+}
+
+type MsgCPEs struct {
+	CPES map[string]CPE
 }
 
 var cpes map[string]CPE      // by serial
@@ -138,19 +148,39 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if cpe.Waiting != nil {
-			msg := new(WsMessage)
-			msg.Cmd = body
 
-			if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
-				fmt.Println("error while sending back answer:", err)
+			var e cwmp.SoapEnvelope
+			xml.Unmarshal([]byte(body), &e)
+
+			if e.KindOf() == "GetParameterNamesResponse" {
+				var envelope cwmp.GetParameterNamesResponse
+				xml.Unmarshal([]byte(body), &envelope)
+
+				msg := new(WsSendMessage)
+				msg.MsgType = "GetParameterNamesResponse"
+				msg.Data, _ = json.Marshal(envelope)
+
+				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+			} else {
+				msg := new(WsMessage)
+				msg.Cmd = body
+
+				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
 			}
+
 			cpe.Waiting = nil
 		}
 
 		// Got Empty Post or a Response. Now check for any event to send, otherwise 204
 		if cpe.Queue.Size() > 0 {
 			req := cpe.Queue.Dequeue().(Request)
-			//			fmt.Println("sending "+req.CwmpMessage)
+			// fmt.Println("sending "+req.CwmpMessage)
 			fmt.Fprintf(w, req.CwmpMessage)
 			cpe.Waiting = &req
 		} else {
@@ -197,16 +227,14 @@ func websocketHandler(ws *websocket.Conn) {
 
 		m := msg.Cmd
 		if m == "list" {
-			var cpeListMessage string
 
-			for key, value := range cpes {
-				//				fmt.Println("Key:", key, "Value:", value.OUI)
-				//				cpeListMessage += "CPE #" + key + " with OUI " + value.OUI + " ["+value.Queue.Size()+"]\n"
-				cpeListMessage += fmt.Sprintf("CPE #%s with OUI %s, IP: %s, CR: %s, SW: %s, HW: %s [%d] last: %s\n", key, value.OUI, value.ExternalIPAddress, value.ConnectionRequestURL, value.SoftwareVersion, value.HardwareVersion, value.Queue.Size(), value.LastConnection)
-				// strings.Join(cpeListMessage, "CPE #"+key+" with OUI "+value.OUI+"\n")
-			}
+			ms := new(WsSendMessage)
+			ms.MsgType = "cpes"
+			msgCpes := new(MsgCPEs)
+			msgCpes.CPES = cpes
+			ms.Data, _ = json.Marshal(msgCpes)
 
-			client.Send(cpeListMessage)
+			client.SendNew(ms)
 
 			// client requests a GetParametersValues to cpe with serial
 			//serial := "1"
@@ -277,11 +305,7 @@ func doConnectionRequest(SerialNumber string) {
 }
 
 func handlerWWW(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(www.Index)
-	n, err := fmt.Fprint(w, www.Index)
-	fmt.Printf("bytes %d\n", n)
-	fmt.Println(err)
-
+	fmt.Fprint(w, www.Index)
 }
 
 func Run(port *int) {

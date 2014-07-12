@@ -1,10 +1,13 @@
 package client
 
 import (
-	"encoding/xml"
+	"encoding/json"
+	//	"encoding/xml"
 	"fmt"
 	"github.com/lucacervasio/liner"
+	//	"github.com/lucacervasio/mosesacs/cwmp"
 	"github.com/lucacervasio/mosesacs/cwmp"
+	"github.com/lucacervasio/mosesacs/daemon"
 	"os"
 	"os/signal"
 	"strings"
@@ -45,7 +48,7 @@ func Run(url string) {
 		return
 	})
 
-	if f, err := os.Open(fmt.Sprintf("/Users/lc/.moses@%s.history", url)); err == nil {
+	if f, err := os.Open(fmt.Sprintf(os.ExpandEnv("$HOME")+"/.moses@%s.history", url)); err == nil {
 		line.ReadHistory(f)
 		f.Close()
 	}
@@ -75,41 +78,68 @@ func Run(url string) {
 func receiver() {
 	for {
 		msg := <-client.Incoming
-		if msg == "quit" {
+		if msg.MsgType == "quit" {
 			quit("TODO", line)
 		}
 
-		var e cwmp.SoapEnvelope
-		xml.Unmarshal([]byte(msg), &e)
-
-		if e.KindOf() == "GetParameterValuesResponse" {
-			var envelope cwmp.GetParameterValuesResponse
-			xml.Unmarshal([]byte(msg), &envelope)
-
-			for idx := range envelope.ParameterList {
-				line.PrintAbovePrompt(string(fmt.Sprintf("%s : %s", envelope.ParameterList[idx].Name, envelope.ParameterList[idx].Value)))
+		switch msg.MsgType {
+		case "cpes":
+			cpes := new(daemon.MsgCPEs)
+			err := json.Unmarshal(msg.Data, &cpes)
+			if err != nil {
+				fmt.Println("error:", err)
 			}
 
-		} else if e.KindOf() == "GetParameterNamesResponse" {
-			line.PrintAbovePrompt(string(msg))
-
-			var envelope cwmp.GetParameterNamesResponse
-			xml.Unmarshal([]byte(msg), &envelope)
-
-			for idx := range envelope.ParameterList {
-				line.PrintAbovePrompt(string(fmt.Sprintf("%s : %s", envelope.ParameterList[idx].Name, envelope.ParameterList[idx].Writable)))
+			line.PrintAbovePrompt("elenco cpe")
+			for key, value := range cpes.CPES {
+				line.PrintAbovePrompt(fmt.Sprintf("CPE %s with OUI %s", key, value.OUI))
 			}
-
-		} else {
-			line.PrintAbovePrompt(string(msg))
-
+		case "GetParameterNamesResponse":
+			getParameterNames := new(cwmp.GetParameterNamesResponse)
+			err := json.Unmarshal(msg.Data, &getParameterNames)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+			//			fmt.Println(getParameterNames.ParameterList)
+			for idx := range getParameterNames.ParameterList {
+				line.PrintAbovePrompt(fmt.Sprintf("%s : %s", getParameterNames.ParameterList[idx].Name, getParameterNames.ParameterList[idx].Writable))
+			}
 		}
+		//		fmt.Println(msg)
+		/*
+			var e cwmp.SoapEnvelope
+			xml.Unmarshal([]byte(msg), &e)
 
+			if e.KindOf() == "GetParameterValuesResponse" {
+				var envelope cwmp.GetParameterValuesResponse
+				xml.Unmarshal([]byte(msg), &envelope)
+
+				for idx := range envelope.ParameterList {
+					line.PrintAbovePrompt(string(fmt.Sprintf("%s : %s", envelope.ParameterList[idx].Name, envelope.ParameterList[idx].Value)))
+				}
+
+			} else if e.KindOf() == "GetParameterNamesResponse" {
+				line.PrintAbovePrompt(string(msg))
+
+				var envelope cwmp.GetParameterNamesResponse
+				xml.Unmarshal([]byte(msg), &envelope)
+
+				for idx := range envelope.ParameterList {
+					line.PrintAbovePrompt(string(fmt.Sprintf("%s : %s", envelope.ParameterList[idx].Name, envelope.ParameterList[idx].Writable)))
+				}
+
+			} else {
+				line.PrintAbovePrompt(string(msg))
+
+			}
+
+		*/
+		//		line.PrintAbovePrompt(msg.MsgType)
 	}
 }
 
 func quit(url string, line *liner.State) {
-	if f, err := os.Create(fmt.Sprintf("/Users/lc/.moses@%s.history", url)); err != nil {
+	if f, err := os.Create(fmt.Sprintf(os.ExpandEnv("$HOME")+"/.moses@%s.history", url)); err != nil {
 		fmt.Println("Error writing history file: ", err)
 	} else {
 		line.WriteHistory(f)

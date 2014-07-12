@@ -12,12 +12,12 @@ type Connection struct {
 	ws       *websocket.Conn
 	Status   string
 	url      string
-	Incoming chan string
+	Incoming chan daemon.WsSendMessage
 }
 
 func (conn *Connection) Start(url string) {
 	conn.url = url
-	conn.Incoming = make(chan string)
+	conn.Incoming = make(chan daemon.WsSendMessage)
 
 	origin := "http://localhost/"
 	ws, err := websocket.Dial(url, "", origin)
@@ -33,19 +33,20 @@ func (conn *Connection) Start(url string) {
 
 func (conn *Connection) read() {
 	for {
-		var msg daemon.WsMessage
+		var msg daemon.WsSendMessage
 		err := websocket.JSON.Receive(conn.ws, &msg)
 		if err != nil {
 			fmt.Println("error while Reading:", err)
-			conn.Incoming <- "quit"
+			//			conn.Incoming <- "quit"
 			break
 		}
 
-		if msg.Cmd == "ping" {
+		if msg.MsgType == "ping" {
 			conn.Write("pong")
 		} else {
-			conn.Incoming <- msg.Cmd
+			conn.Incoming <- msg
 		}
+
 	}
 }
 
@@ -60,6 +61,6 @@ func (conn *Connection) Write(cmd string) {
 	err := websocket.JSON.Send(conn.ws, msg)
 	if err != nil {
 		fmt.Println("error while Writing:", err)
-		conn.Incoming <- "quit"
+		//		conn.Incoming <- "quit"
 	}
 }
