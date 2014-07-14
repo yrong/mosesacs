@@ -29,7 +29,8 @@ func main() {
 	}
 
 	if *flDaemon {
-		daemon.Run(port)
+		logger := daemon.BasicWriter{}
+		daemon.Run(port, &logger)
 	} else {
 		client.Run(*flUrl)
 	}

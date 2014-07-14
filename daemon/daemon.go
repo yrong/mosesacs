@@ -21,6 +21,20 @@ import (
 
 const Version = "0.1.10"
 
+var logger MosesWriter
+
+type MosesWriter interface {
+	Logger(string)
+}
+
+type BasicWriter struct {
+
+}
+
+func (w *BasicWriter) Logger(log string) {
+	fmt.Println("Free:",log)
+}
+
 type Request struct {
 	Id          string
 	Websocket   *websocket.Conn
@@ -125,6 +139,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		cpe.LastConnection = time.Now().UTC()
 
 		log.Printf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents())
+		logger.Logger("ciao")
 		sendAll(fmt.Sprintf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents()))
 
 		expiration := time.Now().AddDate(0, 0, 1) // expires in 1 day
@@ -308,7 +323,8 @@ func handlerWWW(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, www.Index)
 }
 
-func Run(port *int) {
+func Run(port *int, logObj MosesWriter) {
+	logger = logObj
 	cpes = make(map[string]CPE)
 	sessions = make(map[string]*CPE)
 
