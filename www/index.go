@@ -51,7 +51,11 @@ var Index = `
 
             ws.onopen = function () {
                 console.log('connected');
-                var data = {Cmd:cmd}
+                var data = new Object();
+                data["MsgType"] = "command";
+                console.log(data)
+                data["Data"] = {command:'list'};
+                console.log(data)
                 ws.send(JSON.stringify(data))
                 // ws.send(Date.now().toString(), {mask: true});
             };
@@ -63,7 +67,6 @@ var Index = `
             ws.onmessage = function (data, flags) {
                 var s = JSON.parse(data.data);
                 console.log(s.MsgType)
-
                 switch(s.MsgType) {
 
                     case 'cpes':
@@ -78,6 +81,16 @@ var Index = `
                         break;
 
                     case 'GetParameterNamesResponse':
+                        if (typeof (s.Data) == 'object') {
+                            s.Data['ParameterList'].sort(function(a, b){
+                                var nameA=a.Name.toLowerCase(), nameB=b.Name.toLowerCase()
+                                if (nameA < nameB) //sort string ascending
+                                    return -1
+                                if (nameA > nameB)
+                                    return 1
+                                return 0 //default return value (no sorting)
+                            })
+                        }
 
                         if ($('.activeRow').length) {
                             var name = $('.activeRow').attr('class').split(' ')[1]
@@ -97,19 +110,30 @@ var Index = `
                         for(var p in s.Data['ParameterList']) {
                             var name = s.Data['ParameterList'][p]['Name'];
                             var writable = s.Data['ParameterList'][p]['Writable'];
-                            tr += '<tr><td><a href="#" class="mib-object '+name+'">'+name+'</a></td><td>'+writable+'</td></tr>';
+                            tr += '<tr><td><a href="#" class="mib-object '+name+'">'+name+'</a></td>';
+                            tr += '<td></td>';
+                            tr += '<td>'+writable+'</td></tr>';
                         }
                         if ($('.activeRow').length) {
                             $('.activeRow').parent().parent().after(tr)
                         } else {
-                            $('.table_GetParameterNames').append(tr);
+                            $('.table_mib').append(tr);
 
                         }
                         $('.activeRow').removeClass('activeRow')
                         break;
 
+                    case "GetParameterValuesResponse":
+                        var obj = s.Data['ParameterList'][0];
+                        var leaf = obj.Name.replace(/\./g,'\\.');
+                        var value = obj.Value;
+                        $('.'+leaf).parent().next().append(value)
+                        break;
+                    case "log":
+                        $('.live').append(s.Data["log"]+"<br>")
+                        break;
                     default:
-                        console.log("niet")
+                        $('.live').append(s+"<br>")
                 }
 
 
@@ -120,8 +144,10 @@ var Index = `
                 $('#CPE_ID').val( cpe_id );
                 $('#cpeID').text(cpe_id)
 
-                var cmd = 'GetParameterNames ' + cpe_id + ' InternetGatewayDevice.';
-                var data = {Cmd:cmd};
+                var cmd = 'GetParameterNames ' + cpe_id + ' Device.';
+                var data = new Object();
+                data["MsgType"] = "command";
+                data["Data"] = {command:cmd};
                 console.log(data);
                 ws.send(JSON.stringify(data));
             })
@@ -131,14 +157,18 @@ var Index = `
                 $('#RPC_METHOD').val( 'GetParameterNames');
                 var cpe_id = $('#CPE_ID').val();
                 var obj = $(this).text();
-                var cmd = 'GetParameterNames ' + cpe_id + ' ' + obj;
-                var data = {Cmd:cmd};
+                var data = new Object();
+//                var cmd = (obj.substr(obj.length-1,obj.length) == '.') ? 'GetParameterNames' : 'GetParameterValues';
+                var cmd = (obj.substr(obj.length-1,obj.length) == '.') ? 'GetParameterNames' : 'readMib';
+                cmd = cmd + ' ' + cpe_id + ' ' + obj;
+                console.log(cmd)
+                data["MsgType"] = "command";
+                data["Data"] = {command:cmd};
                 ws.send(JSON.stringify(data));
                 return false;
             })
 
         })
-
     </script>
 </head>
 <body>
@@ -210,8 +240,11 @@ var Index = `
     <div class="row">
         <div class="col-lg-12 col-md-12 col-sm-12">
 
-            <table class="table table-striped table-bordered table-condensed table_GetParameterNames">
+            <table class="table table-striped table-bordered table-condensed table_mib">
                 <thead>
+                    <th>Object</th>
+                    <th>Value</th>
+                    <th>Writable</th>
                 </thead>
                 <tbody>
                 <!--<tr><td><a href="#" class="mib-object">InternetGatewayDevice.DeviceInfo.</a></td><td></td></tr>-->
