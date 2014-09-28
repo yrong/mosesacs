@@ -104,7 +104,28 @@ func receiver() {
 			for idx := range getParameterNames.ParameterList {
 				line.PrintAbovePrompt(fmt.Sprintf("%s : %s", getParameterNames.ParameterList[idx].Name, getParameterNames.ParameterList[idx].Writable))
 			}
+		case "GetParameterValuesResponse":
+			getParameterValues := new(cwmp.GetParameterValuesResponse)
+			err := json.Unmarshal(msg.Data, &getParameterValues)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+			for idx := range getParameterValues.ParameterList {
+				line.PrintAbovePrompt(fmt.Sprintf("%s : %s", getParameterValues.ParameterList[idx].Name, getParameterValues.ParameterList[idx].Value))
+			}
+		case "log":
+			log := make(map[string]string)
+			err := json.Unmarshal(msg.Data, &log)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+
+//			fmt.Printf("%+v",log["prova"])
+			line.PrintAbovePrompt(fmt.Sprintf("%s", log["log"]))
+
 		}
+
+
 		//		fmt.Println(msg)
 		/*
 			var e cwmp.SoapEnvelope

@@ -157,15 +157,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	} else if messageType == "GetRPC" {
 
 	} else {
-		if messageType == "GetParameterValuesResponse" {
+//		if messageType == "GetParameterValuesResponse" {
 			// eseguo del parsing, invio i dati via websocket o altro
-		} else if len == 0 {
+
+	//	} else if len == 0 {
+		if len == 0 {
 			// empty post
 			log.Printf("Got Empty Post")
 		}
 
 		if cpe.Waiting != nil {
-
 			var e cwmp.SoapEnvelope
 			xml.Unmarshal([]byte(body), &e)
 
@@ -175,6 +176,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 				msg := new(WsSendMessage)
 				msg.MsgType = "GetParameterNamesResponse"
+				msg.Data, _ = json.Marshal(envelope)
+
+				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+			} else if e.KindOf() == "GetParameterValuesResponse" {
+				var envelope cwmp.GetParameterValuesResponse
+				xml.Unmarshal([]byte(body), &envelope)
+
+				msg := new(WsSendMessage)
+				msg.MsgType = "GetParameterValuesResponse"
 				msg.Data, _ = json.Marshal(envelope)
 
 				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {

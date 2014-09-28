@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 	//	"github.com/lucacervasio/mosesacs/client"
+	"encoding/json"
 )
 
 type Client struct {
@@ -24,13 +25,22 @@ func (client *Client) String() string {
 }
 
 func (client *Client) Send(cmd string) {
-	msg := new(WsMessage)
-	msg.Cmd = cmd
+	msg := new(WsSendMessage)
+	msg.MsgType = "log"
 
-	err := websocket.JSON.Send(client.ws, msg)
-	if err != nil {
-		fmt.Println("error while Writing:", err)
-	}
+	m := make(map[string]string)
+	m["log"] = cmd
+	msg.Data, _ = json.Marshal(m)
+
+	client.SendNew(msg)
+
+//	msg := new(WsMessage)
+//	msg.Cmd = cmd
+//
+//	err := websocket.JSON.Send(client.ws, msg)
+//	if err != nil {
+//		fmt.Println("error while Writing:", err)
+//	}
 }
 
 func (client *Client) SendNew(msg *WsSendMessage) {
