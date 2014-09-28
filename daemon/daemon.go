@@ -247,7 +247,7 @@ func websocketHandler(ws *websocket.Conn) {
 	go periodicWsChecker(&client, quit)
 
 	for {
-		var msg WsMessage
+		var msg WsSendMessage
 		err := websocket.JSON.Receive(ws, &msg)
 		if err != nil {
 			fmt.Println("error while Receive:", err)
@@ -255,7 +255,15 @@ func websocketHandler(ws *websocket.Conn) {
 			break
 		}
 
-		m := msg.Cmd
+		data := make(map[string]string)
+		err = json.Unmarshal(msg.Data, &data)
+
+		if err != nil {
+			fmt.Println("error:",err)
+		}
+
+		m := data["command"]
+
 		if m == "list" {
 
 			ms := new(WsSendMessage)
