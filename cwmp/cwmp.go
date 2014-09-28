@@ -64,7 +64,8 @@ func (i *CWMPInform) GetEvents() string {
 
 func (i *CWMPInform) GetConnectionRequest() string {
 	for idx := range i.ParameterList {
-		if i.ParameterList[idx].Name == "InternetGatewayDevice.ManagementServer.ConnectionRequestURL" {
+		// valid condition for both tr98 and tr181
+		if strings.HasSuffix(i.ParameterList[idx].Name,"Device.ManagementServer.ConnectionRequestURL") {
 			return i.ParameterList[idx].Value
 		}
 	}
@@ -74,7 +75,7 @@ func (i *CWMPInform) GetConnectionRequest() string {
 
 func (i *CWMPInform) GetSoftwareVersion() string {
 	for idx := range i.ParameterList {
-		if i.ParameterList[idx].Name == "InternetGatewayDevice.DeviceInfo.SoftwareVersion" {
+		if strings.HasSuffix(i.ParameterList[idx].Name,"Device.DeviceInfo.SoftwareVersion") {
 			return i.ParameterList[idx].Value
 		}
 	}
@@ -84,7 +85,7 @@ func (i *CWMPInform) GetSoftwareVersion() string {
 
 func (i *CWMPInform) GetHardwareVersion() string {
 	for idx := range i.ParameterList {
-		if i.ParameterList[idx].Name == "InternetGatewayDevice.DeviceInfo.HardwareVersion" {
+		if strings.HasSuffix(i.ParameterList[idx].Name,"Device.DeviceInfo.HardwareVersion") {
 			return i.ParameterList[idx].Value
 		}
 	}
