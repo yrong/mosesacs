@@ -2,6 +2,7 @@ package cwmp
 
 import (
 	"encoding/xml"
+	"strings"
 )
 
 type SoapEnvelope struct {
@@ -86,6 +87,16 @@ func (i *CWMPInform) GetHardwareVersion() string {
 		if i.ParameterList[idx].Name == "InternetGatewayDevice.DeviceInfo.HardwareVersion" {
 			return i.ParameterList[idx].Value
 		}
+	}
+
+	return ""
+}
+
+func (i *CWMPInform) GetDataModelType() string {
+	if 	strings.HasPrefix(i.ParameterList[0].Name,"InternetGatewayDevice") {
+		return "TR098"
+	} else if strings.HasPrefix(i.ParameterList[0].Name,"Device") {
+		return "TR181"
 	}
 
 	return ""

@@ -53,6 +53,7 @@ type CPE struct {
 	Waiting              *Request
 	HardwareVersion      string
 	LastConnection       time.Time
+	DataModel			 string
 }
 
 type Message struct {
@@ -132,7 +133,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 				ExternalIPAddress:    addr,
 				ConnectionRequestURL: Inform.GetConnectionRequest(),
 				OUI:                  Inform.DeviceId.OUI,
-				Queue:                lane.NewQueue()}
+				Queue:                lane.NewQueue(),
+				DataModel:			  Inform.GetDataModelType()}
 		}
 		obj := cpes[Inform.DeviceId.SerialNumber]
 		cpe := &obj
