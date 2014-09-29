@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 )
 
-const Version = "0.1.13"
+const Version = "0.1.12"
 
 var logger MosesWriter
 
@@ -78,13 +78,7 @@ var cpes map[string]CPE      // by serial
 var sessions map[string]*CPE // by session cookie
 var clients []Client
 
-//func (req Request) reply(msg string) {
-//	if _, err := req.Websocket.Write([]byte(msg)); err != nil {
-//
-//	}
-//}
-
-func handler(w http.ResponseWriter, r *http.Request) {
+func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 	//	log.Printf("New connection coming from %s", r.RemoteAddr)
 	defer r.Body.Close()
 	tmp, _ := ioutil.ReadAll(r.Body)
@@ -220,129 +214,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func periodicWsChecker(c *Client, quit chan bool) {
-	ticker := time.NewTicker(30 * time.Second)
-	for {
-		select {
-		case <-ticker.C:
-			fmt.Println("new tick on client:", c)
-			c.Send("ping")
-		case <-quit:
-			fmt.Println("received quit command for periodicWsChecker")
-			ticker.Stop()
-			return
-		}
-	}
-}
-
-func websocketHandler(ws *websocket.Conn) {
-	fmt.Println("New websocket client via ws")
-	defer ws.Close()
-
-	client := Client{ws: ws, start: time.Now().UTC()}
-	clients = append(clients, client)
-	//	client.Read()
-
-	quit := make(chan bool)
-	go periodicWsChecker(&client, quit)
-
-	for {
-		var msg WsSendMessage
-		err := websocket.JSON.Receive(ws, &msg)
-		if err != nil {
-			fmt.Println("error while Receive:", err)
-			quit <- true
-			break
-		}
-
-		data := make(map[string]string)
-		err = json.Unmarshal(msg.Data, &data)
-
-		if err != nil {
-			fmt.Println("error:",err)
-		}
-
-		m := data["command"]
-
-		if m == "list" {
-
-			ms := new(WsSendMessage)
-			ms.MsgType = "cpes"
-			msgCpes := new(MsgCPEs)
-			msgCpes.CPES = cpes
-			ms.Data, _ = json.Marshal(msgCpes)
-
-			client.SendNew(ms)
-
-			// client requests a GetParametersValues to cpe with serial
-			//serial := "1"
-			//leaf := "Device.Time."
-			// enqueue this command with the ws number to get the answer back
-
-		} else if m == "version" {
-			client.Send(fmt.Sprintf("MosesAcs Daemon %s", Version))
-
-		} else if m == "status" {
-			var response string
-			for i := range clients {
-				response += clients[i].String() + "\n"
-			}
-
-			client.Send(response)
-
-		} else if strings.Contains(m, "readMib") {
-			i := strings.Split(m, " ")
-			//			cpeSerial, _ := strconv.Atoi(i[1])
-			//			fmt.Printf("CPE %d\n", cpeSerial)
-			//			fmt.Printf("LEAF %s\n", i[2])
-			req := Request{i[1], ws, cwmp.GetParameterValues(i[2])}
-
-			if _, exists := cpes[i[1]]; exists {
-				cpes[i[1]].Queue.Enqueue(req)
-				if cpes[i[1]].State != "Connected" {
-					// issue a connection request
-					go doConnectionRequest(i[1])
-				}
-			} else {
-				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
-			}
-		} else if strings.Contains(m, "GetParameterNames") {
-			i := strings.Split(m, " ")
-			req := Request{i[1], ws, cwmp.GetParameterNames(i[2])}
-
-			if _, exists := cpes[i[1]]; exists {
-				cpes[i[1]].Queue.Enqueue(req)
-				if cpes[i[1]].State != "Connected" {
-					// issue a connection request
-					go doConnectionRequest(i[1])
-				}
-			} else {
-				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
-			}
-		}
-	}
-	fmt.Println("ws closed, leaving read routine")
-
-	for i := range clients {
-		if clients[i].ws == ws {
-			clients = append(clients[:i], clients[i+1:]...)
-		}
-	}
-}
-
-func sendAll(msg string) {
-	for i := range clients {
-		clients[i].Send(msg)
-	}
-}
-
 func doConnectionRequest(SerialNumber string) {
 	fmt.Println("issuing a connection request to CPE", SerialNumber)
 	//	http.Get(cpes[SerialNumber].ConnectionRequestURL)
 	Auth("user", "pass", cpes[SerialNumber].ConnectionRequestURL)
 }
 
-func handlerWWW(w http.ResponseWriter, r *http.Request) {
+func staticPage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, www.Index)
 }
 
@@ -353,13 +231,13 @@ func Run(port *int, logObj MosesWriter) {
 
 	// plain http handler for cpes
 	fmt.Printf("HTTP Handler installed at http://0.0.0.0:%d/acs for cpes to connect\n", *port)
-	http.HandleFunc("/acs", handler)
+	http.HandleFunc("/acs", CwmpHandler)
 
 	fmt.Printf("Endpoint installed at http://0.0.0.0:%d/api for admin stuff\n", *port)
 	http.Handle("/api", websocket.Handler(websocketHandler))
 
 	fmt.Printf("WEB handler installed at http://0.0.0.0:%d/www\n", *port)
-	http.HandleFunc("/www", handlerWWW)
+	http.HandleFunc("/www", staticPage)
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {
