@@ -6,6 +6,7 @@ import (
 	"os"
 	//	"strings"
 	"github.com/lucacervasio/mosesacs/daemon"
+	"encoding/json"
 )
 
 type Connection struct {
@@ -55,8 +56,12 @@ func (conn *Connection) Close() {
 }
 
 func (conn *Connection) Write(cmd string) {
-	msg := new(daemon.WsMessage)
-	msg.Cmd = cmd
+	msg := new(daemon.WsSendMessage)
+	msg.MsgType = "command"
+
+	var temp = make(map[string]string)
+	temp["command"] = cmd
+	msg.Data, _ = json.Marshal(temp)
 
 	err := websocket.JSON.Send(conn.ws, msg)
 	if err != nil {
