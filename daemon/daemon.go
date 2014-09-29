@@ -12,14 +12,13 @@ import (
 	"github.com/lucacervasio/mosesacs/cwmp"
 	"github.com/lucacervasio/mosesacs/www"
 	"github.com/oleiade/lane"
-	"strings"
 	"time"
 	//	"regexp"
 	//	"strconv"
 	"encoding/json"
 )
 
-const Version = "0.1.14"
+const Version = "0.1.15"
 
 var logger MosesWriter
 

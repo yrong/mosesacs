@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"github.com/lucacervasio/mosesacs/cwmp"
 	"code.google.com/p/go.net/websocket"
 	"fmt"
 	"time"
@@ -91,6 +92,18 @@ func websocketHandler(ws *websocket.Conn) {
 				}
 			} else {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
+			}
+		} else if m == "getMib" {
+			cpe := data["cpe"]
+			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"])}
+			if _, exists := cpes[cpe]; exists {
+				cpes[cpe].Queue.Enqueue(req)
+				if cpes[cpe].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(cpe)
+				}
+			} else {
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", cpe))
 			}
 		}
 	}
