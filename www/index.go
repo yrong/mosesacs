@@ -110,6 +110,7 @@ var Index = `
 
                     default:
                         console.log("niet")
+                        $('.mosesacs-live').append(s+"<br>")
                 }
 
 
