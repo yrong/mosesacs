@@ -47,7 +47,7 @@ var Index = `
         $(document).ready(function() {
 
             cmd = 'list';
-            var ws = new WebSocket('ws://localhost:9292/api');
+            var ws = new WebSocket('ws://cwmp.mosesacs.org:9292/api');
 
             ws.onopen = function () {
                 console.log('connected');
