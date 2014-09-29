@@ -48,8 +48,7 @@ var Index = `
 
             cmd = 'list';
             active_obj = null;
-            var ws = new WebSocket('ws://localhost:9292/api');
-//            var ws = new WebSocket('ws://172.16.0.76:9292/api');
+            var ws = new WebSocket('ws://cwmp.mosesacs.org:9292/api');
             var cpes = new Object();
 
             ws.onopen = function () {
