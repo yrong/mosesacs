@@ -33,14 +33,6 @@ func (client *Client) Send(cmd string) {
 	msg.Data, _ = json.Marshal(m)
 
 	client.SendNew(msg)
-
-//	msg := new(WsMessage)
-//	msg.Cmd = cmd
-//
-//	err := websocket.JSON.Send(client.ws, msg)
-//	if err != nil {
-//		fmt.Println("error while Writing:", err)
-//	}
 }
 
 func (client *Client) SendNew(msg *WsSendMessage) {
