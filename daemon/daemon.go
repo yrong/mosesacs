@@ -1,6 +1,9 @@
 package daemon
 
 import (
+	"github.com/lucacervasio/mosesacs/cwmp"
+	"github.com/lucacervasio/mosesacs/www"
+	"github.com/oleiade/lane"
 	"code.google.com/p/go.net/websocket"
 	"encoding/xml"
 	"fmt"
@@ -8,13 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	//"encoding/json"
-	"github.com/lucacervasio/mosesacs/cwmp"
-	"github.com/lucacervasio/mosesacs/www"
-	"github.com/oleiade/lane"
 	"time"
-	//	"regexp"
-	//	"strconv"
 	"encoding/json"
 )
 
@@ -53,6 +50,7 @@ type CPE struct {
 	HardwareVersion      string
 	LastConnection       time.Time
 	DataModel			 string
+	KeepConnectionOpen	 bool
 }
 
 type Message struct {
@@ -127,7 +125,8 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 				ConnectionRequestURL: Inform.GetConnectionRequest(),
 				OUI:                  Inform.DeviceId.OUI,
 				Queue:                lane.NewQueue(),
-				DataModel:			  Inform.GetDataModelType()}
+				DataModel:			  Inform.GetDataModelType(),
+				KeepConnectionOpen:   false}
 		}
 		obj := cpes[Inform.DeviceId.SerialNumber]
 		cpe := &obj
@@ -207,7 +206,11 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, req.CwmpMessage)
 			cpe.Waiting = &req
 		} else {
-			w.WriteHeader(204)
+			if cpe.KeepConnectionOpen {
+				fmt.Println("I'm keeping connection open")
+			} else {
+				w.WriteHeader(204)
+			}
 		}
 	}
 
