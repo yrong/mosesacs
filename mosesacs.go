@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/lucacervasio/mosesacs/client"
+	"github.com/lucacervasio/mosesacs/cli"
 	"github.com/lucacervasio/mosesacs/daemon"
 	"os"
 )

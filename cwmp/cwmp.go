@@ -35,6 +35,10 @@ type ParameterInfoStruct struct {
 	Writable string
 }
 
+type GetParameterValues_ struct {
+	ParameterNames []string `xml:"Body>GetParameterValues>ParameterNames>string"`
+}
+
 type GetParameterValuesResponse struct {
 	ParameterList []ParameterValueStruct `xml:"Body>GetParameterValuesResponse>ParameterList>ParameterValueStruct"`
 }
@@ -65,7 +69,7 @@ func (i *CWMPInform) GetEvents() string {
 func (i *CWMPInform) GetConnectionRequest() string {
 	for idx := range i.ParameterList {
 		// valid condition for both tr98 and tr181
-		if strings.HasSuffix(i.ParameterList[idx].Name,"Device.ManagementServer.ConnectionRequestURL") {
+		if strings.HasSuffix(i.ParameterList[idx].Name, "Device.ManagementServer.ConnectionRequestURL") {
 			return i.ParameterList[idx].Value
 		}
 	}
@@ -75,7 +79,7 @@ func (i *CWMPInform) GetConnectionRequest() string {
 
 func (i *CWMPInform) GetSoftwareVersion() string {
 	for idx := range i.ParameterList {
-		if strings.HasSuffix(i.ParameterList[idx].Name,"Device.DeviceInfo.SoftwareVersion") {
+		if strings.HasSuffix(i.ParameterList[idx].Name, "Device.DeviceInfo.SoftwareVersion") {
 			return i.ParameterList[idx].Value
 		}
 	}
@@ -85,7 +89,7 @@ func (i *CWMPInform) GetSoftwareVersion() string {
 
 func (i *CWMPInform) GetHardwareVersion() string {
 	for idx := range i.ParameterList {
-		if strings.HasSuffix(i.ParameterList[idx].Name,"Device.DeviceInfo.HardwareVersion") {
+		if strings.HasSuffix(i.ParameterList[idx].Name, "Device.DeviceInfo.HardwareVersion") {
 			return i.ParameterList[idx].Value
 		}
 	}
@@ -94,9 +98,9 @@ func (i *CWMPInform) GetHardwareVersion() string {
 }
 
 func (i *CWMPInform) GetDataModelType() string {
-	if strings.HasPrefix(i.ParameterList[0].Name,"InternetGatewayDevice") {
+	if strings.HasPrefix(i.ParameterList[0].Name, "InternetGatewayDevice") {
 		return "TR098"
-	} else if strings.HasPrefix(i.ParameterList[0].Name,"Device") {
+	} else if strings.HasPrefix(i.ParameterList[0].Name, "Device") {
 		return "TR181"
 	}
 
@@ -129,6 +133,7 @@ func GetParameterValues(leaf string) string {
     <cwmp:GetParameterValues>
       <ParameterNames>
       	<string>` + leaf + `</string>
+        <string>Device.Time.</string>
       </ParameterNames>
     </cwmp:GetParameterValues>
   </soap:Body>
