@@ -121,6 +121,67 @@ var main_css = `
 .btn-getparametervalues {
     margin-left: 20px;
 }
+
+.td-mib::before {
+    content: '';
+    left: 0px;
+    right: auto;
+    border-left: 1px solid #999;
+    bottom: 60px;
+    height: 100%;
+    top: 0;
+    width: 1px;
+    padding: 8px 15px;
+    margin-left: -5px;
+}
+
+.td-mib::after {
+    content: '';
+    left: 15px;
+    /* right: auto; */
+    /* border-left: 1px solid red; */
+    /* bottom: 60px; */
+    /* height: 100%; */
+    /* top: 0; */
+    width: 1px;
+    margin: 11px 0px;
+    border-top: 1px solid #999;
+    /* height: 20px; */
+    /* top: 129px; */
+    width: 25px;
+    position: absolute;
+}
+
+.level-2::after {width: 35px;}.level-2>a { padding-left: 15px;}
+.level-3::after {width: 45px;}.level-3>a { padding-left: 25px;}
+.level-4::after {width: 55px;}.level-4>a { padding-left: 35px;}
+.level-5::after {width: 65px;}.level-5>a { padding-left: 45px;}
+.level-6::after {width: 75px;}.level-6>a { padding-left: 55px;}
+.level-7::after {width: 85px;}.level-7>a { padding-left: 65px;}
+.level-8::after {width: 95px;}.level-8>a { padding-left: 75px;}
+.level-9::after {width: 105px;}.level-9>a { padding-left: 85px;}
+.level-10::after {width: 115px;}.level-10>a { padding-left: 95px;}
+.level-11::after {width: 125px;}.level-11>a { padding-left: 105px;}
+.level-12::after {width: 135px;}.level-12>a { padding-left: 115px;}
+.level-13::after {width: 145px;}.level-13>a { padding-left: 125px;}
+.level-14::after {width: 155px;}.level-14>a { padding-left: 135px;}
+.level-15::after {width: 165px;}.level-15>a { padding-left: 145px;}
+.level-16::after {width: 175px;}.level-16>a { padding-left: 155px;}
+.level-17::after {width: 185px;}.level-17>a { padding-left: 165px;}
+.level-18::after {width: 195px;}.level-18>a { padding-left: 175px;}
+.level-19::after {width: 205px;}.level-19>a { padding-left: 185px;}
+.level-20::after {width: 215px;}.level-20>a { padding-left: 195px;}
+.level-21::after {width: 225px;}.level-21>a { padding-left: 205px;}
+.level-22::after {width: 235px;}.level-22>a { padding-left: 215px;}
+.level-23::after {width: 245px;}.level-23>a { padding-left: 225px;}
+.level-24::after {width: 255px;}.level-24>a { padding-left: 235px;}
+.level-25::after {width: 265px;}.level-25>a { padding-left: 245px;}
+.level-26::after {width: 275px;}.level-26>a { padding-left: 255px;}
+.level-27::after {width: 285px;}.level-27>a { padding-left: 265px;}
+.level-28::after {width: 295px;}.level-28>a { padding-left: 275px;}
+.level-29::after {width: 305px;}.level-29>a { padding-left: 285px;}
+.level-30::after {width: 315px;}.level-30>a { padding-left: 295px;}
+.level-31::after {width: 325px;}.level-31>a { padding-left: 305px;}
 `
 var Index = `
 <!DOCTYPE html>
@@ -141,6 +202,8 @@ var Index = `
 
             cmd = 'list';
             active_obj = null;
+            writable_array = [];
+
             var ws = new WebSocket('ws://127.0.0.1:9292/api');
 //            var ws = new WebSocket('ws://cwmp.mosesacs.org:9292/api');
             var cpes = new Object();
@@ -185,54 +248,63 @@ var Index = `
                         if (typeof (s.Data) == 'object') {
                             s.Data['ParameterList'].sort(function(a, b){
                                 var nameA=a.Name.toLowerCase(), nameB=b.Name.toLowerCase()
-                                if (nameA < nameB) //sort string ascending
+//                                if (nameA < nameB) //sort string ascending
+//                                    return -1
+//                                if (nameA > nameB)
+//                                    return 1
+                                if (nameA > nameB) //sort string ascending
                                     return -1
-                                if (nameA > nameB)
+                                if (nameA < nameB)
                                     return 1
                                 return 0 //default return value (no sorting)
                             })
                         }
 
-                        if (this_obj.next().length > 0) {
-                            this_obj.next().empty();
-                        }
+                        cleanup_table();
 
                         var data = s.Data['ParameterList'];
 
-                        var ul = $(document.createElement('ul')).addClass('ul-mib');
-                        for (var d in data) {
-                            var li = document.createElement('li');
-                            var a = $(document.createElement('a')).addClass('mib-object').attr('leaf',data[d]['Name']);
-                            var getLeafValue = $(document.createElement('a')).attr('leaf',data[d]['Name']).addClass('GetParameterValues btn btn-default btn-xs btn-info btn-getparametervalues');
-                            getLeafValue.attr('href','#')
-                            a.attr('href','#')
-                            var span = document.createElement('span');
-                            var i = $(document.createElement('i'));
-//                            var spanGetValue = $(document.createElement('span')).addClass('no-border glyphicon glyphicon-arrow-right');
-//                            var LeafValue = '<span class="no-border pull-right InternetGatewayDevice.Time.NTPServer1"></span>';
-                            var LeafValue = '<span class="no-border pull-right '+data[d]['Name']+'"></span>';
-
-                            $(ul).append(
-                                    $(li).append(
-                                            $(a).append(
-                                                    $(span).append(i).append(" "+data[d]['Name']))
-                                    ).append($(getLeafValue).append("get value")).append(LeafValue)
-                            );
-                        }
-                        this_obj.after(ul)
+                        tree_to_table(data)
                         break;
 
                     case "GetParameterValuesResponse":
                         var objs = s.Data['ParameterList'];
-                        for(var i in objs){
-                            var obj = s.Data['ParameterList'][i];
-                            var leaf = obj.Name.replace(/\./g,'\\.');
-                            var value = obj.Value;
-                            $('.'+leaf).text(value);
+
+                        if (typeof (s.Data) == 'object') {
+                            s.Data['ParameterList'].sort(function(a, b){
+                                var nameA=a.Name.toLowerCase(), nameB=b.Name.toLowerCase()
+//                                if (nameA < nameB) //sort string ascending
+//                                    return -1
+//                                if (nameA > nameB)
+//                                    return 1
+                                if (nameA > nameB) //sort string ascending
+                                    return -1
+                                if (nameA < nameB)
+                                    return 1
+                                return 0 //default return value (no sorting)
+                            })
                         }
+
+                        cleanup_table();
+
+                        tree_to_table(objs);
+
+//                        if (mib_object.hasClass('parent-obj')) {
+//                            mib_object.next().after(createTree(objs));
+//                        } else {
+//                            mib_object.after(createTree(objs));
+//                        }
+
+//                        for(var i in objs){
+//                            var obj = s.Data['ParameterList'][i];
+//                            var leaf = obj.Name.replace(/\./g,'\\.');
+//                            var value = obj.Value;
+//                            $('.'+leaf).text(value);
+//                        }
                         break;
                     case "log":
-                        $('.live').append(s.Data["log"]+"<br>")
+                        if (s.Data['log']!='ping')
+                            $('.live').append(s.Data["log"]+"<br>")
                         break;
                     default:
                         $('.live').append(s+"<br>")
@@ -250,12 +322,14 @@ var Index = `
                 var name = (cpes[cpe_id]['DataModel'] == 'TR098') ? "InternetGatewayDevice." : "Device.";
                 $('.parent').text(' '+name);
                 $('.parent').parent().attr('leaf',name);
+                $('#getParent').attr('leaf',name);
                 $('.mib').show();
 
             });
 
             $(document).on('click', ".GetParameterValues", function(){
                 var leaf = $(this).attr('leaf');
+                active_obj = leaf;
                 var data = new Object();
                 data["MsgType"] = "command";
                 data["Data"] = {
@@ -279,8 +353,61 @@ var Index = `
                 };
                 ws.send(JSON.stringify(data));
             })
+        });
 
-        })
+        function tree_to_table(data){
+            var actual_level = parseInt($( "[tr-leaf='"+active_obj+"']").attr('level'));
+            var next_level = actual_level;
+
+            for(var index in data){
+                var leaf = data[index]['Name'];
+                if (active_obj != leaf) {
+                    next_level = actual_level+1;
+                }
+                var a = $(document.createElement('a')).addClass('mib-object').attr('leaf', leaf).text(leaf).attr('href','#');
+                var writable = data[index]['Writable'];
+                if (writable!=undefined)
+                    writable_array[leaf] = writable;
+
+                var value = data[index]['Value'];
+                var td_leaf = $(document.createElement('td')).append(a).addClass('td-mib').addClass('level-'+next_level);
+                var td_value = $(document.createElement('td')).text(value);
+                var td_writable = $(document.createElement('td')).text(writable_array[leaf]);
+                var a_getvalue = $(document.createElement('a')).text('get value').attr('href','#').addClass('GetParameterValues').attr('leaf',data[index]['Name']);
+                td_leaf.append(a_getvalue);
+                var tr = $(document.createElement('tr')).attr('tr-leaf',leaf).append(td_leaf).append(td_value).append(td_writable).attr('level', next_level);
+
+                if (active_obj == leaf) {
+                    $( "[tr-leaf='"+active_obj+"']").replaceWith(tr);
+                } else {
+                    $( "[tr-leaf='"+active_obj+"']").after(tr);
+                }
+
+
+            }
+
+        }
+
+        function cleanup_table(){
+            var this_tr_obj = $( "[tr-leaf='"+active_obj+"']");
+            var this_tr_obj_level = this_tr_obj.attr('level');
+            var trovato = false;
+            this_tr_obj.parent().find('tr').each(function(){
+                var _this = $(this);
+                var level = _this.attr('level');
+
+                if (level > this_tr_obj_level) {
+                    _this.remove();
+                } else {
+                    trovato = false;
+                }
+
+                if (_this.attr('tr-leaf') == active_obj) {
+                    trovato = true;
+                }
+            });
+        }
+
     </script>
 </head>
 <body>
@@ -317,29 +444,6 @@ var Index = `
                         </ul>
                     </li>
                 </ul>
-
-
-
-                <!--<form class="navbar-form navbar-left" role="search">
-                    <div class="form-group">
-                        <input type="text" class="form-control" placeholder="Search">
-                    </div>
-                    <button type="submit" class="btn btn-default">Submit</button>
-                </form>
-                <ul class="nav navbar-nav navbar-right">
-                    <li><a href="#">Link</a></li>
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <span class="caret"></span></a>
-                        <ul class="dropdown-menu" role="menu">
-                            <li><a href="#">Action</a></li>
-                            <li><a href="#">Another action</a></li>
-                            <li><a href="#">Something else here</a></li>
-                            <li class="divider"></li>
-                            <li><a href="#">Separated link</a></li>
-                        </ul>
-                    </li>
-                </ul>
-                -->
             </div><!-- /.navbar-collapse -->
         </div><!-- /.container-fluid -->
     </nav>
@@ -351,13 +455,32 @@ var Index = `
     <div class="row">
         <div class="col-lg-12 col-md-12 col-sm-12">
 
-            <div class="mib tree">
-                <ul>
-                    <li>
-                        <a href="#" class="mib-object"><span class="parent"><i class="icon-folder-open"></i> Parent</span></a>
-                    </li>
-                </ul>
-            </div>
+            <table class="table mib-tree table-condensed">
+                <thead>
+                    <th>leaf</th>
+                    <th>value</th>
+                    <th>writable</th>
+                </thead>
+                <tbody>
+                    <tr tr-leaf="InternetGatewayDevice." level="1">
+                        <td class="td-mib level-1">
+                            <a href="#" class="mib-object" leaf="InternetGatewayDevice.">InternetGatewayDevice.</a>
+                            <a href="#" class="GetParameterValues" leaf="InternetGatewayDevice.">get value</a>
+                        </td>
+                        <td>value</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!--<div class="mib tree">-->
+                <!--<ul>-->
+                    <!--<li>-->
+                        <!--<a href="#" class="mib-object parent-obj"><span class="parent"><i class="icon-folder-open"></i> Parent</span></a>-->
+                        <!--<a leaf="" id="getParent" class="GetParameterValues btn btn-default btn-xs btn-info btn-getparametervalues" href="#">get value</a>-->
+                    <!--</li>-->
+                <!--</ul>-->
+            <!--</div>-->
 
         </div>
         <!--<div class="col-lg-2"></div>-->
