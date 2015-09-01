@@ -204,7 +204,8 @@ var Index = `
             active_obj = null;
             writable_array = [];
 
-            var ws = new WebSocket('ws://127.0.0.1:9292/api');
+            var ws_uri = "ws://" + window.location.host + ":9292/api";
+            var ws = new WebSocket(ws_uri);
 //            var ws = new WebSocket('ws://cwmp.mosesacs.org:9292/api');
             var cpes = new Object();
 
@@ -499,4 +500,5 @@ var Index = `
 
 </body>
 </html>
+
 `
