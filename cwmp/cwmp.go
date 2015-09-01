@@ -134,7 +134,6 @@ func GetParameterValues(leaf string) string {
     <cwmp:GetParameterValues>
       <ParameterNames>
       	<string>` + leaf + `</string>
-        <string>Device.Time.</string>
       </ParameterNames>
     </cwmp:GetParameterValues>
   </soap:Body>
