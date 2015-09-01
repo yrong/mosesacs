@@ -204,7 +204,7 @@ var Index = `
             active_obj = null;
             writable_array = [];
 
-            var ws_uri = "ws://" + window.location.host + ":9292/api";
+            var ws_uri = "ws://" + window.location.host + "/api";
             var ws = new WebSocket(ws_uri);
 //            var ws = new WebSocket('ws://cwmp.mosesacs.org:9292/api');
             var cpes = new Object();
