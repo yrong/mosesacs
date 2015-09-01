@@ -1,12 +1,12 @@
 package daemon
 
 import (
-	"github.com/lucacervasio/mosesacs/cwmp"
 	"code.google.com/p/go.net/websocket"
-	"fmt"
-	"time"
 	"encoding/json"
+	"fmt"
+	"github.com/lucacervasio/mosesacs/cwmp"
 	"strings"
+	"time"
 )
 
 func websocketHandler(ws *websocket.Conn) {
@@ -33,7 +33,7 @@ func websocketHandler(ws *websocket.Conn) {
 		err = json.Unmarshal(msg.Data, &data)
 
 		if err != nil {
-			fmt.Println("error:",err)
+			fmt.Println("error:", err)
 		}
 
 		m := data["command"]
@@ -92,6 +92,18 @@ func websocketHandler(ws *websocket.Conn) {
 				}
 			} else {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
+			}
+		} else if m == "GetParameterValues" {
+			cpe := data["cpe"]
+			req := Request{cpe, ws, cwmp.GetParameterValues(data["object"])}
+			if _, exists := cpes[cpe]; exists {
+				cpes[cpe].Queue.Enqueue(req)
+				if cpes[cpe].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(cpe)
+				}
+			} else {
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", cpe))
 			}
 		} else if m == "getMib" {
 			cpe := data["cpe"]
