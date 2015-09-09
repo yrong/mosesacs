@@ -4,10 +4,10 @@ import (
 	"github.com/tsuibin/goxmpp2/xmpp"
 	"crypto/tls"
 	"encoding/xml"
-	"flag"
+//	"flag"
 	"fmt"
 	"log"
-	"os"
+	//"os"
 	"strings"
 )
 
@@ -18,6 +18,7 @@ func init() {
 // Demonstrate the API, and allow the user to interact with an XMPP
 // server via the terminal.
 func main() {
+  /*
 	jidStr := flag.String("jid", "", "JID to log in as")
 	pw := flag.String("pw", "", "password")
 	flag.Parse()
@@ -26,6 +27,10 @@ func main() {
 		flag.Usage()
 		os.Exit(2)
 	}
+  */
+
+	jid := xmpp.JID("acs@mosesacs.org")
+  pwd := "password1234"
 
 	stat := make(chan xmpp.Status)
 	go func() {
@@ -34,7 +39,7 @@ func main() {
 		}
 	}()
 	tlsConf := tls.Config{InsecureSkipVerify: true}
-	c, err := xmpp.NewClient(&jid, *pw, tlsConf, nil, xmpp.Presence{}, stat)
+	c, err := xmpp.NewClient(&jid, pwd, tlsConf, nil, xmpp.Presence{}, stat)
 	if err != nil {
 		log.Fatalf("NewClient(%v): %v", jid, err)
 	}
@@ -47,12 +52,28 @@ func main() {
 		fmt.Println("done reading")
 	}(c.Recv)
 
+  outmsg := `<iq from="acs@mosesacs.org" to="cpe@mosesacs.org" id="cr001" type="get"><connectionRequest xmlns="urn:broadband-forum-org:cwmp:xmppConnReq-1-0"><username>username</username><password>password</password></connectionRequest></iq>`
+
+  dec := xml.NewDecoder(strings.NewReader(outmsg))
+  var stan xmpp.Stanza
+  stan = &xmpp.Iq{}
+  err = dec.Decode(stan)
+  if err == nil {
+    fmt.Println(stan)
+    c.Send <- stan
+  } else {
+    fmt.Printf("Parse error: %v\n", err)
+  }
+
+/*
 	roster := c.Roster.Get()
 	fmt.Printf("%d roster entries:\n", len(roster))
 	for i, entry := range roster {
 		fmt.Printf("%d: %v\n", i, entry)
 	}
+*/
 
+/*
 	p := make([]byte, 1024)
 	for {
 		nr, _ := os.Stdin.Read(p)
@@ -93,4 +114,5 @@ func main() {
 		}
 	}
 	fmt.Println("done sending")
+  */
 }
