@@ -2,11 +2,12 @@ package main
 
 import (
   "./xmpp"
-  "fmt"
+  "time"
 )
 
 func main() {
   xmpp.StartClient()
   defer xmpp.Close()
-  xmpp.SendConnectionRequest("cpe@mosesacs.org")
+  xmpp.SendConnectionRequest("cpe1@mosesacs.org")
+  time.Sleep(2 * time.Second)
 }
