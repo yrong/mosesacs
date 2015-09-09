@@ -16,7 +16,16 @@ Connect to it and get a cli:
 
     mosesacs
 
-Congratulations, you've connected to the daemon via websocket. Now you can issue commands via cli o browse the embedded webserver at http://localhost:9292/www
+Congratulations, you've connected to the daemon via websocket. Now you can issue commands via CLI or browse the embedded webserver at http://localhost:9292/www
+
+## Compatibility on ARM
+
+Moses is built on purpose only with dependencies in pure GO. So it runs on ARM processors with no issues. We tested it on QNAP devices and Raspberry for remote control.
+
+## CLI commands
+
+ - `list`: list CPEs
+ - `readMib`: read a specific leaf or a subtree
 
 ## Services exposed
 
