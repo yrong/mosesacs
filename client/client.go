@@ -6,6 +6,7 @@ import (
 	"net/http/cookiejar"
 	"bytes"
 	"github.com/lucacervasio/mosesacs/cwmp"
+	"github.com/lucacervasio/mosesacs/xmpp"
 	"net/url"
 	"encoding/xml"
 	"io/ioutil"
@@ -39,6 +40,7 @@ func (a Agent) Run() {
 	http.HandleFunc(a.Cpe.ConnectionRequestURL, a.connectionRequestHandler)
 	log.Println("Start http server waiting connection request")
 	a.startConnection()
+  a.startXmppConnection()
 
 	http.ListenAndServe(":7547", nil)
 }
@@ -51,6 +53,13 @@ func (a Agent) connectionRequestHandler(w http.ResponseWriter, r *http.Request) 
 func random(min, max int) int {
 	rand.Seed(int64(time.Now().Nanosecond()))
 	return rand.Intn(max - min) + min
+}
+
+func (a Agent) startXmppConnection() {
+  log.Println("starting StartXmppConnection") 
+  xmpp.StartClient("cpe2@mosesacs.org", "password1234", func(str string){
+    log.Println("got "+str)
+  })
 }
 
 func (a Agent) startConnection(){

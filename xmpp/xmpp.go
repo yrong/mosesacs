@@ -13,7 +13,7 @@ import (
 
 var c *xmpp.Client
 
-func StartClient() {
+func StartClient(user string, pwd string, cb func(string)) {
   /*
 	jidStr := flag.String("jid", "", "JID to log in as")
 	pw := flag.String("pw", "", "password")
@@ -25,8 +25,7 @@ func StartClient() {
 	}
   */
 
-	jid := xmpp.JID("acs@mosesacs.org")
-  pwd := "password1234"
+	jid := xmpp.JID(user)
 
 	stat := make(chan xmpp.Status)
 	go func() {
@@ -45,6 +44,8 @@ func StartClient() {
 	go func(ch <-chan xmpp.Stanza) {
 		for obj := range ch {
 			fmt.Printf("s: %v\n", obj)
+      str := fmt.Sprintf("%v", obj)
+      cb(str)
 		}
 		fmt.Println("done reading")
 	}(c.Recv)
@@ -104,7 +105,7 @@ func StartClient() {
 
 
 func SendConnectionRequest(cpe string) {
-  outmsg := `<iq from="acs@mosesacs.org" to="`+cpe+`/casatua" id="cr001" type="get"><connectionRequest xmlns="urn:broadband-forum-org:cwmp:xmppConnReq-1-0"><username>username</username><password>password</password></connectionRequest></iq>`
+  outmsg := `<iq from="acs@mosesacs.org" to="`+cpe+`" id="cr001" type="get"><connectionRequest xmlns="urn:broadband-forum-org:cwmp:xmppConnReq-1-0"><username>username</username><password>password</password></connectionRequest></iq>`
  dec := xml.NewDecoder(strings.NewReader(outmsg))
   var stan xmpp.Stanza
   stan = &xmpp.Iq{}
