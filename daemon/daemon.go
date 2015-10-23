@@ -35,6 +35,7 @@ type Request struct {
 	Id          string
 	Websocket   *websocket.Conn
 	CwmpMessage string
+	Callback    func(msg *WsSendMessage) error
 }
 
 type CPE struct {
@@ -170,9 +171,10 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 				msg.MsgType = "GetParameterNamesResponse"
 				msg.Data, _ = json.Marshal(envelope)
 
-				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
-					fmt.Println("error while sending back answer:", err)
-				}
+				cpe.Waiting.Callback(msg)
+//				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
+//					fmt.Println("error while sending back answer:", err)
+//				}
 
 			} else if e.KindOf() == "GetParameterValuesResponse" {
 				var envelope cwmp.GetParameterValuesResponse
@@ -182,9 +184,10 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 				msg.MsgType = "GetParameterValuesResponse"
 				msg.Data, _ = json.Marshal(envelope)
 
-				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
-					fmt.Println("error while sending back answer:", err)
-				}
+				cpe.Waiting.Callback(msg)
+//				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
+//					fmt.Println("error while sending back answer:", err)
+//				}
 
 			} else {
 				msg := new(WsMessage)

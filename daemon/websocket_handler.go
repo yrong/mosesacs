@@ -37,6 +37,7 @@ func websocketHandler(ws *websocket.Conn) {
 		}
 
 		m := data["command"]
+		fmt.Println(m)
 
 		if m == "list" {
 
@@ -69,7 +70,9 @@ func websocketHandler(ws *websocket.Conn) {
 			//			cpeSerial, _ := strconv.Atoi(i[1])
 			//			fmt.Printf("CPE %d\n", cpeSerial)
 			//			fmt.Printf("LEAF %s\n", i[2])
-			req := Request{i[1], ws, cwmp.GetParameterValues(i[2])}
+			req := Request{i[1], ws, cwmp.GetParameterValues(i[2]), func(msg *WsSendMessage) error {
+				return nil
+			}}
 
 			if _, exists := cpes[i[1]]; exists {
 				cpes[i[1]].Queue.Enqueue(req)
@@ -81,8 +84,16 @@ func websocketHandler(ws *websocket.Conn) {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
 			}
 		} else if strings.Contains(m, "GetParameterNames") {
+			fmt.Println("qui")
 			i := strings.Split(m, " ")
-			req := Request{i[1], ws, cwmp.GetParameterNames(i[2])}
+			req := Request{i[1], ws, cwmp.GetParameterNames(i[2]), func(msg *WsSendMessage) error {
+				fmt.Println("sono nella callback")
+				if err := websocket.JSON.Send(ws, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+				return err
+			}}
 
 			if _, exists := cpes[i[1]]; exists {
 				cpes[i[1]].Queue.Enqueue(req)
@@ -95,7 +106,14 @@ func websocketHandler(ws *websocket.Conn) {
 			}
 		} else if m == "GetParameterValues" {
 			cpe := data["cpe"]
-			req := Request{cpe, ws, cwmp.GetParameterValues(data["object"])}
+			req := Request{cpe, ws, cwmp.GetParameterValues(data["object"]), func(msg *WsSendMessage) error {
+				fmt.Println("sono nella callback")
+				if err := websocket.JSON.Send(ws, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+				return err
+			}}
 			if _, exists := cpes[cpe]; exists {
 				cpes[cpe].Queue.Enqueue(req)
 				if cpes[cpe].State != "Connected" {
@@ -106,11 +124,40 @@ func websocketHandler(ws *websocket.Conn) {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", cpe))
 			}
 		} else if m == "GetSummary" {
-//			cpe := data["cpe"]
+			cpe := data["cpe"]
+			ch := make(chan *WsSendMessage)
+			req := Request{cpe, ws, cwmp.GetParameterValues(data["object"]), func(msg *WsSendMessage) error {
+				fmt.Println("sono nella callback")
+				ch <- msg
+				return nil // TODO da implementare un timeout ? boh
+			}}
+			if _, exists := cpes[cpe]; exists {
+				cpes[cpe].Queue.Enqueue(req)
+				if cpes[cpe].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(cpe)
+				}
+			} else {
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", cpe))
+			}
+
+			fmt.Println("sono sospeso in attesa che ritorni il messaggio")
+			m := <- ch
+			fmt.Println("è tornato")
+			if err := websocket.JSON.Send(ws, m); err != nil {
+				fmt.Println("error while sending back answer:", err)
+			}
 
 		} else if m == "getMib" {
 			cpe := data["cpe"]
-			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"])}
+			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"]), func(msg *WsSendMessage) error {
+				fmt.Println("sono nella callback")
+				if err := websocket.JSON.Send(ws, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+				return err
+			}}
 			if _, exists := cpes[cpe]; exists {
 				cpes[cpe].Queue.Enqueue(req)
 				if cpes[cpe].State != "Connected" {
