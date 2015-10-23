@@ -202,9 +202,10 @@ var Index = `
 
             cmd = 'list';
             active_obj = null;
+            summary = false;
             writable_array = [];
 
-            var ws_uri = "ws://" + window.location.host + "/api";
+            var ws_uri = "ws://" + window.location.host + ":9292/api";
             var ws = new WebSocket(ws_uri);
 //            var ws = new WebSocket('ws://cwmp.mosesacs.org:9292/api');
             var cpes = new Object();
@@ -225,6 +226,7 @@ var Index = `
 
             ws.onmessage = function (data, flags) {
                 var s = JSON.parse(data.data);
+                console.log(s)
 
                 switch(s.MsgType) {
 
@@ -249,10 +251,6 @@ var Index = `
                         if (typeof (s.Data) == 'object') {
                             s.Data['ParameterList'].sort(function(a, b){
                                 var nameA=a.Name.toLowerCase(), nameB=b.Name.toLowerCase()
-//                                if (nameA < nameB) //sort string ascending
-//                                    return -1
-//                                if (nameA > nameB)
-//                                    return 1
                                 if (nameA > nameB) //sort string ascending
                                     return -1
                                 if (nameA < nameB)
@@ -274,10 +272,6 @@ var Index = `
                         if (typeof (s.Data) == 'object') {
                             s.Data['ParameterList'].sort(function(a, b){
                                 var nameA=a.Name.toLowerCase(), nameB=b.Name.toLowerCase()
-//                                if (nameA < nameB) //sort string ascending
-//                                    return -1
-//                                if (nameA > nameB)
-//                                    return 1
                                 if (nameA > nameB) //sort string ascending
                                     return -1
                                 if (nameA < nameB)
@@ -288,20 +282,13 @@ var Index = `
 
                         cleanup_table();
 
-                        tree_to_table(objs);
+                        if (summary) {
+                            show_summary(objs);
+                        } else {
+                            tree_to_table(objs);
+                        }
 
-//                        if (mib_object.hasClass('parent-obj')) {
-//                            mib_object.next().after(createTree(objs));
-//                        } else {
-//                            mib_object.after(createTree(objs));
-//                        }
 
-//                        for(var i in objs){
-//                            var obj = s.Data['ParameterList'][i];
-//                            var leaf = obj.Name.replace(/\./g,'\\.');
-//                            var value = obj.Value;
-//                            $('.'+leaf).text(value);
-//                        }
                         break;
                     case "log":
                         if (s.Data['log']!='ping')
@@ -319,13 +306,27 @@ var Index = `
                 var cpe_id = $(this).attr('data-id');
                 $('#CPE_ID').val( cpe_id );
                 $('#cpeID').text(cpe_id);
-
                 var name = (cpes[cpe_id]['DataModel'] == 'TR098') ? "InternetGatewayDevice." : "Device.";
+                $('#cpe_summary').attr('data-model',name);
                 $('.parent').text(' '+name);
                 $('.parent').parent().attr('leaf',name);
                 $('#getParent').attr('leaf',name);
                 $('.mib').show();
+                $('.mib-tree').show();
 
+            });
+
+            $(document).on('click',"#cpe_summary", function(){
+                summary = true;
+                var leaf = $(this).attr('data-model');
+                var data = new Object();
+                data["MsgType"] = "command";
+                data["Data"] = {
+                    command:'GetSummary',
+                    cpe:$('#CPE_ID').val(),
+                    object:leaf
+                };
+                ws.send(JSON.stringify(data));
             });
 
             $(document).on('click', ".GetParameterValues", function(){
@@ -356,6 +357,13 @@ var Index = `
             })
         });
 
+        function show_summary(data){
+            $('.mib-tree').hide();
+            summary = false;
+            console.log(data)
+            $('.cpe-summary').show();
+        }
+
         function tree_to_table(data){
             var actual_level = parseInt($( "[tr-leaf='"+active_obj+"']").attr('level'));
             var next_level = actual_level;
@@ -375,21 +383,20 @@ var Index = `
                 var td_value = $(document.createElement('td')).text(value);
                 var td_writable = $(document.createElement('td')).text(writable_array[leaf]);
                 var a_getvalue = $(document.createElement('a')).text('get value').attr('href','#').addClass('GetParameterValues').attr('leaf',data[index]['Name']);
-                td_leaf.append(a_getvalue);
-                var tr = $(document.createElement('tr')).attr('tr-leaf',leaf).append(td_leaf).append(td_value).append(td_writable).attr('level', next_level);
+                var td_getvalue = $(document.createElement('td')).append(a_getvalue);
+                var tr = $(document.createElement('tr')).attr('tr-leaf',leaf).append(td_leaf).append(td_getvalue).append(td_value).append(td_writable).attr('level', next_level);
 
                 if (active_obj == leaf) {
                     $( "[tr-leaf='"+active_obj+"']").replaceWith(tr);
                 } else {
                     $( "[tr-leaf='"+active_obj+"']").after(tr);
                 }
-
-
             }
-
+            $('.mib-tree').show();
         }
 
         function cleanup_table(){
+            $('.cpe-summary').hide();
             var this_tr_obj = $( "[tr-leaf='"+active_obj+"']");
             var this_tr_obj_level = this_tr_obj.attr('level');
             var trovato = false;
@@ -434,6 +441,12 @@ var Index = `
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 
+                <p class="navbar-text navbar-right" style="margin-right: 10px;">
+                    <a href="#" id="cpe_summary">
+                        <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+                    </a>
+                </p>
+
                 <p class="navbar-text navbar-right" id="cpeID" style="margin-right: 10px;"></p>
 
                 <ul class="nav navbar-nav">
@@ -459,6 +472,7 @@ var Index = `
             <table class="table mib-tree table-condensed">
                 <thead>
                     <th>leaf</th>
+                    <th></th>
                     <th>value</th>
                     <th>writable</th>
                 </thead>
@@ -466,6 +480,8 @@ var Index = `
                     <tr tr-leaf="InternetGatewayDevice." level="1">
                         <td class="td-mib level-1">
                             <a href="#" class="mib-object" leaf="InternetGatewayDevice.">InternetGatewayDevice.</a>
+                        </td>
+                        <td>
                             <a href="#" class="GetParameterValues" leaf="InternetGatewayDevice.">get value</a>
                         </td>
                         <td>value</td>
@@ -474,29 +490,18 @@ var Index = `
                 </tbody>
             </table>
 
-            <!--<div class="mib tree">-->
-                <!--<ul>-->
-                    <!--<li>-->
-                        <!--<a href="#" class="mib-object parent-obj"><span class="parent"><i class="icon-folder-open"></i> Parent</span></a>-->
-                        <!--<a leaf="" id="getParent" class="GetParameterValues btn btn-default btn-xs btn-info btn-getparametervalues" href="#">get value</a>-->
-                    <!--</li>-->
-                <!--</ul>-->
-            <!--</div>-->
+            <table class="table cpe-summary table-condensed" style="display: none;">
+
+            </table>
+
 
         </div>
-        <!--<div class="col-lg-2"></div>-->
     </div>
 </div>
 
 <div class="live well">
 
 </div>
-
-
-<!--
-
-<div class="navbar-fixed-bottom well mosesacs-live container"></div>
--->
 
 </body>
 </html>

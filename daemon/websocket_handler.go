@@ -107,7 +107,7 @@ func websocketHandler(ws *websocket.Conn) {
 			}
 		} else if m == "GetSummary" {
 //			cpe := data["cpe"]
-et summ
+
 		} else if m == "getMib" {
 			cpe := data["cpe"]
 			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"])}
