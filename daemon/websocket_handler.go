@@ -71,7 +71,11 @@ func websocketHandler(ws *websocket.Conn) {
 			//			fmt.Printf("CPE %d\n", cpeSerial)
 			//			fmt.Printf("LEAF %s\n", i[2])
 			req := Request{i[1], ws, cwmp.GetParameterValues(i[2]), func(msg *WsSendMessage) error {
-				return nil
+				if err := websocket.JSON.Send(ws, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+				return err
 			}}
 
 			if _, exists := cpes[i[1]]; exists {
