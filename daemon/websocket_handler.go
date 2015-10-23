@@ -105,6 +105,9 @@ func websocketHandler(ws *websocket.Conn) {
 			} else {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", cpe))
 			}
+		} else if m == "GetSummary" {
+//			cpe := data["cpe"]
+et summ
 		} else if m == "getMib" {
 			cpe := data["cpe"]
 			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"])}
