@@ -51,6 +51,12 @@ var main_css = `
     display: none;
 }
 
+.mib-tree {
+    /*font-size: 11px;*/
+    width: 100%;
+    display: none;
+}
+
 .tree {
     min-height:20px;
     /*padding:19px;*/
@@ -122,11 +128,15 @@ var main_css = `
     margin-left: 20px;
 }
 
+.td-mib {
+    border-left: 1px solid #999;
+}
+
 .td-mib::before {
     content: '';
     left: 0px;
     right: auto;
-    border-left: 1px solid #999;
+    /*border-left: 1px solid #999;*/
     bottom: 60px;
     height: 100%;
     top: 0;
@@ -378,9 +388,11 @@ var Index = `
                 if (writable!=undefined)
                     writable_array[leaf] = writable;
 
-                var value = data[index]['Value'];
+//                var value = (data[index]['Value']!=undefined) ? data[index]['Value'].substring(0, 100).replace(/\n/g,'<br>') : '';
+                var value = (data[index]['Value']!=undefined) ? data[index]['Value'].replace(/\n/g,'<br>').replace(/,/g,',<br>') : '';
+
                 var td_leaf = $(document.createElement('td')).append(a).addClass('td-mib').addClass('level-'+next_level);
-                var td_value = $(document.createElement('td')).text(value);
+                var td_value = $(document.createElement('td')).html(value);
                 var td_writable = $(document.createElement('td')).text(writable_array[leaf]);
                 var a_getvalue = $(document.createElement('a')).text('get value').attr('href','#').addClass('GetParameterValues').attr('leaf',data[index]['Name']);
                 var td_getvalue = $(document.createElement('td')).append(a_getvalue);
@@ -469,12 +481,12 @@ var Index = `
     <div class="row">
         <div class="col-lg-12 col-md-12 col-sm-12">
 
-            <table class="table mib-tree table-condensed">
+            <table class="REMOVEtable mib-tree table-condensed table-striped">
                 <thead>
-                    <th>leaf</th>
-                    <th></th>
-                    <th>value</th>
-                    <th>writable</th>
+                    <th style="width: 44%">leaf</th>
+                    <th style="width: 6%"></th>
+                    <th style="width: 44%">value</th>
+                    <th style="width: 6%">writable</th>
                 </thead>
                 <tbody>
                     <tr tr-leaf="InternetGatewayDevice." level="1">
@@ -484,7 +496,7 @@ var Index = `
                         <td>
                             <a href="#" class="GetParameterValues" leaf="InternetGatewayDevice.">get value</a>
                         </td>
-                        <td>value</td>
+                        <td></td>
                         <td></td>
                     </tr>
                 </tbody>
