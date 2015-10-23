@@ -40,7 +40,7 @@ func (a Agent) Run() {
 	http.HandleFunc(a.Cpe.ConnectionRequestURL, a.connectionRequestHandler)
 	log.Println("Start http server waiting connection request")
 	a.startConnection()
-  a.startXmppConnection()
+//  a.startXmppConnection()
 
 	http.ListenAndServe(":7547", nil)
 }
@@ -91,11 +91,14 @@ func (a Agent) startConnection(){
 
 			if envelope.KindOf() == "GetParameterValues" {
 				log.Println("Send GetParameterValuesResponse")
-				log.Println(body)
-				var e cwmp.GetParameterValues_
-				xml.Unmarshal([]byte(body), &e)
-				log.Println(e)
-				msgToSend = []byte(cwmp.BuildGetParameterValuesResponse(a.Cpe.SerialNumber))
+				var leaves cwmp.GetParameterValues_
+				xml.Unmarshal([]byte(body), &leaves)
+				msgToSend = []byte(cwmp.BuildGetParameterValuesResponse(a.Cpe.SerialNumber, leaves))
+			} else if envelope.KindOf() == "GetParameterNames" {
+				log.Println("Send GetParameterNamesResponse")
+				var leaves cwmp.GetParameterNames_
+				xml.Unmarshal([]byte(body), &leaves)
+				msgToSend = []byte(cwmp.BuildGetParameterNamesResponse(a.Cpe.SerialNumber, leaves))
 			} else {
 				log.Println("send empty post")
 				msgToSend = []byte("")
