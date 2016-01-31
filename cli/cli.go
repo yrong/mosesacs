@@ -15,6 +15,7 @@ import (
 
 var line *liner.State
 var client Connection
+var context string
 
 func Run(url string) {
 	line = liner.NewLiner()
@@ -38,11 +39,34 @@ func Run(url string) {
 	}()
 
 	baseCmds := []string{"exit", "help", "version", "list", "status", "shutdown", "uptime", "readMib", "GetParameterNames"}
+	contextCmds := []string{"summary"}
 
 	line.SetCompleter(func(line string) (c []string) {
-		for _, n := range baseCmds {
-			if strings.HasPrefix(n, strings.ToLower(line)) {
-				c = append(c, n)
+		if (strings.HasPrefix(line, "cpe ")) {
+			// should return the list of cpes as second argument
+			arr := strings.Split(line, " ")
+
+			cpes := []string{"cpe1", "cpe12", "cpe3"} // TODO get cpe list via ws
+			for _, n := range cpes {
+				if strings.HasPrefix(n, strings.ToLower(arr[1])) {
+					c = append(c, arr[0] + " " + n)
+				}
+			}
+		} else {
+			// cycle through all available commands
+			var cmds []string
+			if context != "" {
+				// if in context cycle through cpe-specific commands
+				cmds = contextCmds
+			} else {
+				// otherwise cycle though base commands
+				cmds = baseCmds
+			}
+
+			for _, n := range cmds {
+				if strings.HasPrefix(n, strings.ToLower(line)) {
+					c = append(c, n)
+				}
 			}
 		}
 		return
@@ -54,10 +78,10 @@ func Run(url string) {
 	}
 
 	go receiver()
+	context = ""
 
 	for {
-
-		if cmd, err := line.Prompt(fmt.Sprintf("moses@%s> ", url)); err != nil {
+		if cmd, err := line.Prompt(fmt.Sprintf("moses@%s/%s> ", url, context)); err != nil {
 			fmt.Println("Error reading line: ", err)
 		} else {
 			// add to history
@@ -68,7 +92,6 @@ func Run(url string) {
 				processCommand(cmd)
 			}
 		}
-
 	}
 
 	// quit
@@ -172,8 +195,13 @@ func quit(url string, line *liner.State) {
 	os.Exit(0)
 }
 
+
 func processCommand(cmd string) {
 	switch {
+	case strings.HasPrefix(cmd, "cpe "):
+		arr := strings.Split(cmd, " ")
+
+		context = arr[1]
 	case strings.Contains(cmd, "version"):
 		client.Write("version")
 	case strings.Contains(cmd, "readMib"):

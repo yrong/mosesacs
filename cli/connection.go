@@ -1,7 +1,7 @@
 package client
 
 import (
-	"code.google.com/p/go.net/websocket"
+	"golang.org/x/net/websocket"
 	"fmt"
 	"os"
 	//	"strings"
@@ -68,4 +68,12 @@ func (conn *Connection) Write(cmd string) {
 		fmt.Println("error while Writing:", err)
 		//		conn.Incoming <- "quit"
 	}
+}
+
+func (conn *Connection) SendSyncCommand(cmd string) *daemon.WsSendMessage {
+	ch := make(chan *daemon.WsSendMessage)
+	conn.Write(cmd)
+	m := <- ch
+
+	return m
 }

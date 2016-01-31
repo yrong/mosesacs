@@ -4,7 +4,7 @@ import (
 	"github.com/lucacervasio/mosesacs/cwmp"
 	"github.com/lucacervasio/mosesacs/www"
 	"github.com/oleiade/lane"
-	"code.google.com/p/go.net/websocket"
+	"golang.org/x/net/websocket"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"

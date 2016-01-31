@@ -1,7 +1,7 @@
 package daemon
 
 import (
-	"code.google.com/p/go.net/websocket"
+	"golang.org/x/net/websocket"
 	"encoding/json"
 	"fmt"
 	"github.com/lucacervasio/mosesacs/cwmp"
