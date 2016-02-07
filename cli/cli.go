@@ -38,7 +38,7 @@ func Run(url string) {
 		}
 	}()
 
-	baseCmds := []string{"exit", "help", "version", "list", "status", "shutdown", "uptime", "readMib", "GetParameterNames"}
+	baseCmds := []string{"exit", "help", "version", "list", "status", "shutdown", "uptime", "readMib", "writeMib", "GetParameterNames"}
 	contextCmds := []string{"summary"}
 
 	line.SetCompleter(func(line string) (c []string) {
@@ -136,6 +136,8 @@ func receiver() {
 			for idx := range getParameterValues.ParameterList {
 				line.PrintAbovePrompt(fmt.Sprintf("%s : %s", getParameterValues.ParameterList[idx].Name, getParameterValues.ParameterList[idx].Value))
 			}
+		case "SetParameterValuesResponse":
+			line.PrintAbovePrompt(fmt.Sprintf("got SetParameterValuesResponse"))
 		case "log":
 			log := make(map[string]string)
 			err := json.Unmarshal(msg.Data, &log)
@@ -205,6 +207,8 @@ func processCommand(cmd string) {
 	case strings.Contains(cmd, "version"):
 		client.Write("version")
 	case strings.Contains(cmd, "readMib"):
+		client.Write(cmd)
+	case strings.Contains(cmd, "writeMib"):
 		client.Write(cmd)
 	case strings.Contains(cmd, "GetParameterNames"):
 		client.Write(cmd)

@@ -87,6 +87,26 @@ func websocketHandler(ws *websocket.Conn) {
 			} else {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
 			}
+
+		} else if strings.Contains(m, "writeMib") {
+			i := strings.Split(m, " ")
+			req := Request{i[1], ws, cwmp.SetParameterValues(i[2], i[3]), func(msg *WsSendMessage) error {
+				if err := websocket.JSON.Send(ws, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+				return err
+			}}
+
+			if _, exists := cpes[i[1]]; exists {
+				cpes[i[1]].Queue.Enqueue(req)
+				if cpes[i[1]].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(i[1])
+				}
+			} else {
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
+			}
 		} else if strings.Contains(m, "GetParameterNames") {
 			i := strings.Split(m, " ")
 			req := Request{i[1], ws, cwmp.GetParameterNames(i[2]), func(msg *WsSendMessage) error {
