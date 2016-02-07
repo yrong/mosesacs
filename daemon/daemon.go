@@ -13,10 +13,9 @@ import (
 	"os"
 	"time"
 	"encoding/json"
-	"strings"
 )
 
-const Version = "0.1.18"
+const Version = "0.1.19"
 
 var logger MosesWriter
 
@@ -208,11 +207,7 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 		if cpe.Queue.Size() > 0 {
 			req := cpe.Queue.Dequeue().(Request)
 			// fmt.Println("sending "+req.CwmpMessage)
-			msg := req.CwmpMessage
-			if envelope.Header.Id != "" {
-				msg = strings.Replace(msg, "<soap:Header/>", `<soap:Header><cwmp:ID soap:mustUnderstand="1">`+envelope.Header.Id+`</cwmp:ID></soap:Header>`, 1)
-			}
-			fmt.Fprintf(w, msg)
+			fmt.Fprintf(w, req.CwmpMessage)
 			cpe.Waiting = &req
 		} else {
 			if cpe.KeepConnectionOpen {
