@@ -13,9 +13,10 @@ import (
 	"os"
 	"time"
 	"encoding/json"
+	"strings"
 )
 
-const Version = "0.1.16"
+const Version = "0.1.17"
 
 var logger MosesWriter
 
@@ -134,6 +135,7 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 		cpe.LastConnection = time.Now().UTC()
 
 		log.Printf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents())
+		log.Printf("Soap envelope has mustUnderstand %s\n", envelope.Header.Id)
 		logger.Logger("ciao")
 		sendAll(fmt.Sprintf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents()))
 
@@ -144,7 +146,7 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &cookie)
 		sessions[hash] = cpe
 
-		fmt.Fprintf(w, cwmp.InformResponse())
+		fmt.Fprintf(w, cwmp.InformResponse(envelope.Header.Id))
 	} else if messageType == "TransferComplete" {
 
 	} else if messageType == "GetRPC" {
@@ -206,7 +208,11 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 		if cpe.Queue.Size() > 0 {
 			req := cpe.Queue.Dequeue().(Request)
 			// fmt.Println("sending "+req.CwmpMessage)
-			fmt.Fprintf(w, req.CwmpMessage)
+			msg := req.CwmpMessage
+			if envelope.Header.Id != "" {
+				msg = strings.Replace(msg, "<soap:Header/>", `<soap:Header><cwmp:ID soap:mustUnderstand="1">`+envelope.Header.Id+`</cwmp:ID></soap:Header>`, 1)
+			}
+			fmt.Fprintf(w, msg)
 			cpe.Waiting = &req
 		} else {
 			if cpe.KeepConnectionOpen {

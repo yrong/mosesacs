@@ -88,10 +88,8 @@ func websocketHandler(ws *websocket.Conn) {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
 			}
 		} else if strings.Contains(m, "GetParameterNames") {
-			fmt.Println("qui")
 			i := strings.Split(m, " ")
 			req := Request{i[1], ws, cwmp.GetParameterNames(i[2]), func(msg *WsSendMessage) error {
-				fmt.Println("sono nella callback")
 				if err := websocket.JSON.Send(ws, msg); err != nil {
 					fmt.Println("error while sending back answer:", err)
 				}
@@ -111,7 +109,6 @@ func websocketHandler(ws *websocket.Conn) {
 		} else if m == "GetParameterValues" {
 			cpe := data["cpe"]
 			req := Request{cpe, ws, cwmp.GetParameterValues(data["object"]), func(msg *WsSendMessage) error {
-				fmt.Println("sono nella callback")
 				if err := websocket.JSON.Send(ws, msg); err != nil {
 					fmt.Println("error while sending back answer:", err)
 				}

@@ -15,7 +15,9 @@ type SoapEnvelope struct {
 	Body    SoapBody
 }
 
-type SoapHeader struct{}
+type SoapHeader struct{
+	Id string `xml:"ID"`
+}
 type SoapBody struct {
 	CWMPMessage CWMPMessage `xml:",any"`
 }
@@ -121,10 +123,15 @@ type DeviceID struct {
 	SerialNumber string
 }
 
-func InformResponse() string {
+func InformResponse(mustUnderstand string) string {
+	mustUnderstandHeader := ""
+	if mustUnderstand != "" {
+		mustUnderstandHeader = `<cwmp:ID soap:mustUnderstand="1">`+mustUnderstand+`</cwmp:ID>`
+	}
+
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <soap:Header/>
+  <soap:Header>`+ mustUnderstandHeader +`<soap:Header/>
   <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
     <cwmp:InformResponse>
       <MaxEnvelopes>1</MaxEnvelopes>
