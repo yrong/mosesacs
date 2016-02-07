@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-const Version = "0.1.17"
+const Version = "0.1.18"
 
 var logger MosesWriter
 
