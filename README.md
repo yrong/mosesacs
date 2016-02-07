@@ -24,17 +24,28 @@ Moses is built on purpose only with dependencies in pure GO. So it runs on ARM p
 
 ## CLI commands
 
-### `list`: list CPEs
-
-### `readMib serial leaf/subtree`: read a specific leaf or a subtree
+### 1. `list`: list CPEs
 
  example:
 
 ```
  moses@localhost:9292/> list
- elenco cpe
+ cpe list
  CPE A54FD with OUI 006754
+```
+
+### 2. `readMib serial leaf/subtree`: read a specific leaf or a subtree
+
+ example:
+
+```
  moses@localhost:9292/> readMib A54FD Device.
+ Received an Inform from [::1]:58582 (3191 bytes) with SerialNumber A54FD and EventCodes 6 CONNECTION REQUEST
+ InternetGatewayDevice.Time.NTPServer1 : pool.ntp.org
+ InternetGatewayDevice.Time.CurrentLocalTime : 2014-07-11T09:08:25
+ InternetGatewayDevice.Time.LocalTimeZone : +00:00
+ InternetGatewayDevice.Time.LocalTimeZoneName : Greenwich Mean Time : Dublin
+ InternetGatewayDevice.Time.DaylightSavingsUsed : 0
 ```
 
 
