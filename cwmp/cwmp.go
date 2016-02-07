@@ -166,6 +166,7 @@ func SetParameterValues(leaf string, value string) string {
 			  <Value>`+value+`</Value>
 		  </ParameterValueStruct>
       </ParameterList>
+      <ParameterKey>LC1309</ParameterKey>
     </cwmp:SetParameterValues>
   </soap:Body>
 </soap:Envelope>`
