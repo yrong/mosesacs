@@ -24,18 +24,18 @@ Moses is built on purpose only with dependencies in pure GO. So it runs on ARM p
 
 ## CLI commands
 
- ### `list`: list CPEs
+### `list`: list CPEs
 
- ### `readMib`: read a specific leaf or a subtree
-
- `readMib serial leaf/subtree`
+### `readMib serial leaf/subtree`: read a specific leaf or a subtree
 
  example:
 
+```
  moses@localhost:9292/> list
  elenco cpe
  CPE A54FD with OUI 006754
  moses@localhost:9292/> readMib A54FD Device.
+```
 
 
 ## Services exposed
