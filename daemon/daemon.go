@@ -94,6 +94,8 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 
 	var cpe *CPE
 
+	w.Header().Set("Server", "MosesACS "+Version)
+
 	if messageType != "Inform" {
 		if cookie, err := r.Cookie("mosesacs"); err == nil {
 			cpe = sessions[cookie.Value]
