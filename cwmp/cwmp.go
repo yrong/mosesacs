@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/mxk/go-sqlite/sqlite3"
 	"strconv"
+	"crypto/rand"
 )
 
 type SoapEnvelope struct {
@@ -166,10 +167,16 @@ func SetParameterValues(leaf string, value string) string {
 			  <Value>`+value+`</Value>
 		  </ParameterValueStruct>
       </ParameterList>
-      <ParameterKey>LC1309</ParameterKey>
+      <ParameterKey>LC1309`+randToken()+`</ParameterKey>
     </cwmp:SetParameterValues>
   </soap:Body>
 </soap:Envelope>`
+}
+
+func randToken() string {
+	b := make([]byte, 8)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)
 }
 
 func SetParameterMultiValues(data map[string]string) string {
@@ -188,7 +195,7 @@ for key,value := range data {
 }
 
 	msg += `</ParameterList>
-      <ParameterKey>LC1309</ParameterKey>
+      <ParameterKey>LC1309`+randToken()+`</ParameterKey>
     </cwmp:SetParameterValues>
   </soap:Body>
 </soap:Envelope>`
