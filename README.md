@@ -34,7 +34,7 @@ Moses is built on purpose only with dependencies in pure GO. So it runs on ARM p
  CPE A54FD with OUI 006754
 ```
 
-### 2. `readMib serial leaf/subtree`: read a specific leaf or a subtree
+### 2. `readMib SERIAL LEAF/SUBTREE`: read a specific leaf or a subtree
 
  example:
 
@@ -46,6 +46,15 @@ Moses is built on purpose only with dependencies in pure GO. So it runs on ARM p
  InternetGatewayDevice.Time.LocalTimeZone : +00:00
  InternetGatewayDevice.Time.LocalTimeZoneName : Greenwich Mean Time : Dublin
  InternetGatewayDevice.Time.DaylightSavingsUsed : 0
+```
+
+### 3. `writeMib SERIAL LEAF VALUE`: issue a SetParameterValues and write a value into a leaf
+
+ example:
+
+```
+ moses@localhost:9292/> writeMib A54FD InternetGatewayDevice.Time.Enable false
+ Received an Inform from [::1]:58582 (3191 bytes) with SerialNumber A54FD and EventCodes 6 CONNECTION REQUEST
 ```
 
 
