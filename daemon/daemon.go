@@ -239,10 +239,10 @@ func Run(port *int, logObj MosesWriter) {
 	fmt.Printf("HTTP Handler installed at http://0.0.0.0:%d/acs for cpes to connect\n", *port)
 	http.HandleFunc("/acs", CwmpHandler)
 
-	fmt.Printf("Endpoint installed at http://0.0.0.0:%d/api for admin stuff\n", *port)
+	fmt.Printf("Websocket API endpoint installed at http://0.0.0.0:%d/api for admin stuff\n", *port)
 	http.Handle("/api", websocket.Handler(websocketHandler))
 
-	fmt.Printf("WEB handler installed at http://0.0.0.0:%d/www\n", *port)
+	fmt.Printf("WEB Handler installed at http://0.0.0.0:%d/www\n", *port)
 	http.HandleFunc("/www", staticPage)
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
