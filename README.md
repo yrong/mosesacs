@@ -57,6 +57,34 @@ Moses is built on purpose only with dependencies in pure GO. So it runs on ARM p
  Received an Inform from [::1]:58582 (3191 bytes) with SerialNumber A54FD and EventCodes 6 CONNECTION REQUEST
 ```
 
+### 4. `GetParameterNames SERIAL LEAF/SUBTREE`: issue a GetParameterNames and get all leaves/objects at first level
+
+ example:
+
+```
+moses@localhost:9292/> GetParameterNames A54FD InternetGatewayDevice.
+Received an Inform from [::1]:55385 (3119 bytes) with SerialNumber A54FD and EventCodes 6 CONNECTION REQUEST
+InternetGatewayDevice.LANDeviceNumberOfEntries : 0
+InternetGatewayDevice.WANDeviceNumberOfEntries : 0
+InternetGatewayDevice.DeviceInfo. : 0
+InternetGatewayDevice.ManagementServer. : 0
+InternetGatewayDevice.Time. : 0
+InternetGatewayDevice.Layer3Forwarding. : 0
+InternetGatewayDevice.LANDevice. : 0
+InternetGatewayDevice.WANDevice. : 0
+InternetGatewayDevice.X_00507F_InternetAcc. : 0
+InternetGatewayDevice.X_00507F_LAN. : 0
+InternetGatewayDevice.X_00507F_NAT. : 0
+InternetGatewayDevice.X_00507F_VLAN. : 0
+InternetGatewayDevice.X_00507F_Firewall. : 0
+InternetGatewayDevice.X_00507F_Applications. : 0
+InternetGatewayDevice.X_00507F_System. : 0
+InternetGatewayDevice.X_00507F_Status. : 0
+InternetGatewayDevice.X_00507F_Diagnostics. : 0
+```
+
+
+
 
 ## Services exposed
 
