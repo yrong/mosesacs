@@ -17,7 +17,7 @@ func main() {
 	flUrl := flag.String("u", "localhost:9292", "Url to connect")
 	flag.Parse()
 
-	fmt.Printf("MosesACS %s by Luca Cervasio <luca.cervasio@gmail.com> (C)2014 http://mosesacs.org\n", daemon.Version)
+	fmt.Printf("MosesACS %s by Luca Cervasio <luca.cervasio@gmail.com> (C)2014-2016 http://mosesacs.org\n", daemon.Version)
 
 	if *flVersion {
 		os.Exit(0)
