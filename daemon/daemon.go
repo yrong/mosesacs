@@ -15,7 +15,7 @@ import (
 	"encoding/json"
 )
 
-const Version = "0.1.20"
+const Version = "0.1.21"
 
 var logger MosesWriter
 
