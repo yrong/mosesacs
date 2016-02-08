@@ -172,6 +172,30 @@ func SetParameterValues(leaf string, value string) string {
 </soap:Envelope>`
 }
 
+func SetParameterMultiValues(data map[string]string) string {
+	msg := `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header/>
+  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+    <cwmp:SetParameterValues>
+      <ParameterList soapenc:arrayType="cwmp:ParameterValueStruct[`+string(len(data))+`]">`
+
+for key,value := range data {
+	msg += `<ParameterValueStruct>
+			  <Name>`+key+`</Name>
+			  <Value>`+value+`</Value>
+		  </ParameterValueStruct>`
+}
+
+	msg += `</ParameterList>
+      <ParameterKey>LC1309</ParameterKey>
+    </cwmp:SetParameterValues>
+  </soap:Body>
+</soap:Envelope>`
+
+	return msg
+}
+
 func GetParameterNames(leaf string) string {
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
