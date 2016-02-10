@@ -215,15 +215,23 @@ var Index = `
             summary = false;
             writable_array = [];
 
-			var loc = window.location;
-			if (loc.protocol === "https:") {
-				new_uri = "wss:";
-			} else {
-				new_uri = "ws:";
-			}
-			new_uri += "//" + loc.host + "/api";
+            // var ws_uri = "ws://" + window.location.host + ":9292/api";
+            // var ws = new WebSocket(ws_uri);
+//            var ws = new WebSocket('ws://cwmp.mosesacs.org:9292/api');
+
+            var loc = window.location;
+            if (loc.protocol === "https:") {
+                new_uri = "wss:";
+            } else {
+                new_uri = "ws:";
+            }
+            new_uri += "//" + loc.host + "/api";
+
+            console.log(new_uri)
+            new_uri = 'ws://127.0.0.1:9292/api'
 
             var ws = new WebSocket(new_uri);
+
             var cpes = new Object();
 
             ws.onopen = function () {
@@ -310,6 +318,13 @@ var Index = `
                         if (s.Data['log']!='ping')
                             $('.live').append(s.Data["log"]+"<br>")
                         break;
+                    case "summary":
+                        for(var i in s.Data){
+                            console.log(i+" : "+s.Data[i])
+
+                        }
+                    case "SummaryResponse":
+                        show_summary(s.Data)
                     default:
                         $('.live').append(s+"<br>")
                 }
@@ -376,7 +391,21 @@ var Index = `
         function show_summary(data){
             $('.mib-tree').hide();
             summary = false;
-            console.log(data)
+            for(var obj in data){
+                var tr = $(document.createElement('tr'));
+                var td_obj = $(document.createElement('td')).attr('colspan',2).html(obj);
+                $('.cpe-summary').append(tr.append(td_obj));
+                // .attr('tr-leaf',leaf).append(td_leaf).append(td_getvalue).append(td_value).append(td_writable).attr('level', next_level);
+                for (var leaf in data[obj]){
+                    var tr = $(document.createElement('tr'));
+                    var value = data[obj][leaf];
+                    var td_leaf = $(document.createElement('td')).html(leaf);
+                    var td_value = $(document.createElement('td')).html(value);
+                    tr.append(td_leaf).append(td_value);
+                    $('.cpe-summary').append(tr);
+                }
+                
+            }
             $('.cpe-summary').show();
         }
 
@@ -509,7 +538,7 @@ var Index = `
             </table>
 
             <table class="table cpe-summary table-condensed" style="display: none;">
-
+                <tbody></tbody>
             </table>
 
 

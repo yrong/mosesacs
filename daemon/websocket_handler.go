@@ -1,10 +1,10 @@
 package daemon
 
 import (
-	"golang.org/x/net/websocket"
 	"encoding/json"
 	"fmt"
 	"github.com/lucacervasio/mosesacs/cwmp"
+	"golang.org/x/net/websocket"
 	"strings"
 	"time"
 )
@@ -163,8 +163,43 @@ func websocketHandler(ws *websocket.Conn) {
 			}
 
 			fmt.Println("sono sospeso in attesa che ritorni il messaggio")
-			m := <- ch
+			m := <-ch
 			fmt.Println("è tornato")
+
+			// qui devo parsare la response e creare il summary "semplice" da visualizzare
+			getParameterValues := new(cwmp.GetParameterValuesResponse)
+			err := json.Unmarshal(m.Data, &getParameterValues)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+
+			summaryObject := map[string]string{}
+			// 	"enable": "true",
+			// 	"number": "011234",
+			// }
+			// y["incall"] = "false"
+			// esempio su wifi 1
+			for idx := range getParameterValues.ParameterList {
+				objectName := getParameterValues.ParameterList[idx].Name
+				if strings.Contains(objectName, "WLANConfiguration.1.") {
+					fmt.Println(objectName)
+					// cerco l'indice (per ora è 1)
+					splitto := strings.Split(strings.Split(objectName, "WLANConfiguration.1.")[1], ".")
+					leafName := splitto[len(splitto)-1]
+					// if strings.Contains(leafName, "Enable") {
+					if leafName == "Enable" || leafName == "SSID" || leafName == "Status" {
+						summaryObject[leafName] = getParameterValues.ParameterList[idx].Value
+					}
+
+					// fmt.Printf("%s : %s", getParameterValues.ParameterList[idx].Name, getParameterValues.ParameterList[idx].Value)
+				}
+			}
+
+			m.MsgType = "SummaryResponse"
+			dataSummary := map[string]map[string]string{}
+			dataSummary["WIFI"] = summaryObject
+			m.Data, _ = json.Marshal(dataSummary)
+
 			if err := websocket.JSON.Send(ws, m); err != nil {
 				fmt.Println("error while sending back answer:", err)
 			}
