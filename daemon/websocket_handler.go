@@ -173,31 +173,57 @@ func websocketHandler(ws *websocket.Conn) {
 				fmt.Println("error:", err)
 			}
 
-			summaryObject := map[string]string{}
-			// 	"enable": "true",
-			// 	"number": "011234",
-			// }
-			// y["incall"] = "false"
-			// esempio su wifi 1
+			objectsToCheck := map[string]map[string][]string{
+				"WLANConfiguration.1.": {
+					"WIFI1": {
+						"Enable",
+						"Status",
+						"SSID",
+					},
+				},
+				"WLANConfiguration.2.": {
+					"WIFI2": {
+						"Enable",
+						"Status",
+						"SSID",
+					},
+				},
+			}
+
+			summaryObject := map[string]map[string]string{}
+			for what := range objectsToCheck {
+				for area := range objectsToCheck[what] {
+					summaryObject[area] = make(map[string]string)
+				}
+			}
+
 			for idx := range getParameterValues.ParameterList {
 				objectName := getParameterValues.ParameterList[idx].Name
-				if strings.Contains(objectName, "WLANConfiguration.1.") {
-					fmt.Println(objectName)
-					// cerco l'indice (per ora è 1)
-					splitto := strings.Split(strings.Split(objectName, "WLANConfiguration.1.")[1], ".")
-					leafName := splitto[len(splitto)-1]
-					// if strings.Contains(leafName, "Enable") {
-					if leafName == "Enable" || leafName == "SSID" || leafName == "Status" {
-						summaryObject[leafName] = getParameterValues.ParameterList[idx].Value
-					}
 
-					// fmt.Printf("%s : %s", getParameterValues.ParameterList[idx].Name, getParameterValues.ParameterList[idx].Value)
+				for what := range objectsToCheck {
+					if strings.Contains(objectName, what) {
+						splitto := strings.Split(strings.Split(objectName, what)[1], ".")
+						leafName := splitto[len(splitto)-1]
+
+						for area := range objectsToCheck[what] {
+							for leafIndex := range objectsToCheck[what][area] {
+								if leafName == objectsToCheck[what][area][leafIndex] {
+									summaryObject[area][leafName] = getParameterValues.ParameterList[idx].Value
+								}
+							}
+						}
+					}
 				}
 			}
 
 			m.MsgType = "SummaryResponse"
 			dataSummary := map[string]map[string]string{}
-			dataSummary["WIFI"] = summaryObject
+			for what := range objectsToCheck {
+				for area := range objectsToCheck[what] {
+					dataSummary[area] = summaryObject[area]
+				}
+			}
+
 			m.Data, _ = json.Marshal(dataSummary)
 
 			if err := websocket.JSON.Send(ws, m); err != nil {
