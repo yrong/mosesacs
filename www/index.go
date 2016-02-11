@@ -215,6 +215,10 @@ var Index = `
             summary = false;
             writable_array = [];
 
+            // var ws_uri = "ws://" + window.location.host + ":9292/api";
+            // var ws = new WebSocket(ws_uri);
+//            var ws = new WebSocket('ws://cwmp.mosesacs.org:9292/api');
+
             var loc = window.location;
             if (loc.protocol === "https:") {
                 new_uri = "wss:";
@@ -222,6 +226,9 @@ var Index = `
                 new_uri = "ws:";
             }
             new_uri += "//" + loc.host + "/api";
+
+            // for developing use
+            // new_uri = 'ws://127.0.0.1:9292/api'
 
             var ws = new WebSocket(new_uri);
 
@@ -385,7 +392,7 @@ var Index = `
             $('.mib-tree').hide();
             summary = false;
             for(var obj in data){
-                var tr = $(document.createElement('tr'));
+                var tr = $(document.createElement('tr')).addClass('info');
                 var td_obj = $(document.createElement('td')).attr('colspan',2).html(obj);
                 $('.cpe-summary').append(tr.append(td_obj));
                 // .attr('tr-leaf',leaf).append(td_leaf).append(td_getvalue).append(td_value).append(td_writable).attr('level', next_level);
