@@ -173,44 +173,43 @@ func websocketHandler(ws *websocket.Conn) {
 				fmt.Println("error:", err)
 			}
 
-			objectsToCheck := map[string]map[string][]string{
-				"WLANConfiguration.1.": {
-					"WIFI1": {
-						"Enable",
-						"Status",
-						"SSID",
-					},
+			objectsToCheck := map[string][]string{
+				"WAN": {
+					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Name",
+					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress",
+					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Enable",
+					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ConnectionTrigger",
+					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.AddressingType",
+					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.DefaultGateway",
+					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ConnectionType",
+					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ConnectionStatus",
 				},
-				"WLANConfiguration.2.": {
-					"WIFI2": {
-						"Enable",
-						"Status",
-						"SSID",
-					},
+				"WIFI1": {
+					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable",
+					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Status",
+					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",
+				},
+				"WIFI2": {
+					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable",
+					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Status",
+					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID",
 				},
 			}
 
 			summaryObject := map[string]map[string]string{}
-			for what := range objectsToCheck {
-				for area := range objectsToCheck[what] {
-					summaryObject[area] = make(map[string]string)
-				}
+			for area := range objectsToCheck {
+				summaryObject[area] = make(map[string]string)
 			}
 
 			for idx := range getParameterValues.ParameterList {
 				objectName := getParameterValues.ParameterList[idx].Name
 
-				for what := range objectsToCheck {
-					if strings.Contains(objectName, what) {
-						splitto := strings.Split(strings.Split(objectName, what)[1], ".")
-						leafName := splitto[len(splitto)-1]
-
-						for area := range objectsToCheck[what] {
-							for leafIndex := range objectsToCheck[what][area] {
-								if leafName == objectsToCheck[what][area][leafIndex] {
-									summaryObject[area][leafName] = getParameterValues.ParameterList[idx].Value
-								}
-							}
+				for area := range objectsToCheck {
+					for leafIndex := range objectsToCheck[area] {
+						leaf := objectsToCheck[area][leafIndex]
+						if objectName == leaf {
+							leafName := strings.Split(leaf, ".")
+							summaryObject[area][leafName[len(leafName)-1]] = getParameterValues.ParameterList[idx].Value
 						}
 					}
 				}
@@ -218,10 +217,8 @@ func websocketHandler(ws *websocket.Conn) {
 
 			m.MsgType = "SummaryResponse"
 			dataSummary := map[string]map[string]string{}
-			for what := range objectsToCheck {
-				for area := range objectsToCheck[what] {
-					dataSummary[area] = summaryObject[area]
-				}
+			for area := range objectsToCheck {
+				dataSummary[area] = summaryObject[area]
 			}
 
 			m.Data, _ = json.Marshal(dataSummary)
