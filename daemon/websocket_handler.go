@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/lucacervasio/mosesacs/cwmp"
 	"golang.org/x/net/websocket"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -109,7 +110,8 @@ func websocketHandler(ws *websocket.Conn) {
 			}
 		} else if strings.Contains(m, "GetParameterNames") {
 			i := strings.Split(m, " ")
-			req := Request{i[1], ws, cwmp.GetParameterNames(i[2]), func(msg *WsSendMessage) error {
+			nextlevel, _ := strconv.Atoi(i[3])
+			req := Request{i[1], ws, cwmp.GetParameterNames(i[2], nextlevel), func(msg *WsSendMessage) error {
 				if err := websocket.JSON.Send(ws, msg); err != nil {
 					fmt.Println("error while sending back answer:", err)
 				}
@@ -229,7 +231,7 @@ func websocketHandler(ws *websocket.Conn) {
 
 		} else if m == "getMib" {
 			cpe := data["cpe"]
-			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"]), func(msg *WsSendMessage) error {
+			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"], 1), func(msg *WsSendMessage) error {
 				fmt.Println("sono nella callback")
 				if err := websocket.JSON.Send(ws, msg); err != nil {
 					fmt.Println("error while sending back answer:", err)

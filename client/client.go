@@ -1,31 +1,31 @@
 package cwmpclient
 
 import (
+	"bytes"
+	"encoding/xml"
+	"fmt"
+	"github.com/lucacervasio/mosesacs/cwmp"
+	"github.com/lucacervasio/mosesacs/daemon"
+	"github.com/lucacervasio/mosesacs/xmpp"
+	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/http/cookiejar"
-	"bytes"
-	"github.com/lucacervasio/mosesacs/cwmp"
-	"github.com/lucacervasio/mosesacs/xmpp"
 	"net/url"
-	"encoding/xml"
-	"io/ioutil"
-	"time"
-	"math/rand"
 	"strconv"
-	"github.com/lucacervasio/mosesacs/daemon"
-	"fmt"
+	"time"
 )
 
 type Agent struct {
 	Status string
 	AcsUrl string
-	Cpe daemon.CPE
+	Cpe    daemon.CPE
 }
 
 func NewClient() (agent Agent) {
-	serial := strconv.Itoa(random(1000,5000))
-	connection_request_url := "/ConnectionRequest-"+serial
+	serial := strconv.Itoa(random(1000, 5000))
+	connection_request_url := "/ConnectionRequest-" + serial
 	cpe := daemon.CPE{serial, "MOONAR LABS", "001309", connection_request_url, "asd", "asd", "0 BOOTSTRAP", nil, &daemon.Request{}, "4324asd", time.Now().UTC(), "TR181", false}
 	agent = Agent{"initializing", "http://localhost:9292/acs", cpe}
 	log.Println(agent)
@@ -40,7 +40,7 @@ func (a Agent) Run() {
 	http.HandleFunc(a.Cpe.ConnectionRequestURL, a.connectionRequestHandler)
 	log.Println("Start http server waiting connection request")
 	a.startConnection()
-//  a.startXmppConnection()
+	//  a.startXmppConnection()
 
 	http.ListenAndServe(":7547", nil)
 }
@@ -52,24 +52,24 @@ func (a Agent) connectionRequestHandler(w http.ResponseWriter, r *http.Request) 
 
 func random(min, max int) int {
 	rand.Seed(int64(time.Now().Nanosecond()))
-	return rand.Intn(max - min) + min
+	return rand.Intn(max-min) + min
 }
 
 func (a Agent) startXmppConnection() {
-  log.Println("starting StartXmppConnection") 
-  xmpp.StartClient("cpe2@mosesacs.org", "password1234", func(str string){
-    log.Println("got "+str)
-  })
+	log.Println("starting StartXmppConnection")
+	xmpp.StartClient("cpe2@mosesacs.org", "password1234", func(str string) {
+		log.Println("got " + str)
+	})
 }
 
-func (a Agent) startConnection(){
+func (a Agent) startConnection() {
 	log.Printf("send Inform to %s", a.AcsUrl)
 	var msgToSend []byte
 	msgToSend = []byte(cwmp.Inform(a.Cpe.SerialNumber))
 
 	tr := &http.Transport{}
 	jar, _ := cookiejar.New(nil)
-	client := &http.Client{Transport: tr, Jar:jar}
+	client := &http.Client{Transport: tr, Jar: jar}
 	envelope := cwmp.SoapEnvelope{}
 	u, _ := url.Parse(a.AcsUrl)
 
@@ -111,4 +111,3 @@ func (a Agent) startConnection(){
 	}
 
 }
-
