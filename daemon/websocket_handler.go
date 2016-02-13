@@ -176,34 +176,42 @@ func websocketHandler(ws *websocket.Conn) {
 			}
 
 			objectsToCheck := map[string][]string{}
-
+			re_wan_ip := regexp.MustCompile(`InternetGatewayDevice.WANDevice.(\d+).WANConnectionDevice.(\d+).WANIPConnection.(\d+).(Name|ExternalIPAddress|Enable|NATEnabled|Username|ConnectionTrigger|AddressingType|DefaultGateway|ConnectionType|ConnectionStatus)`)
+			re_wan_ppp := regexp.MustCompile(`InternetGatewayDevice.WANDevice.(\d+).WANConnectionDevice.(\d+).WANPPPConnection.(\d+).(Name|ExternalIPAddress|Enable|ConnectionTrigger|AddressingType|DefaultGateway|ConnectionType|ConnectionStatus)`)
+			re_hosts := regexp.MustCompile(`InternetGatewayDevice.LANDevice.1.Hosts.Host.(\d+).(Active|HostName|IPAddress|MACAddress|InterfaceType)`)
+			re_wifi := regexp.MustCompile(`InternetGatewayDevice.LANDevice.1.WLANConfiguration.(\d+).(SSID|Enable|Status)`)
+			re_voice := regexp.MustCompile(`InternetGatewayDevice.Services.VoiceService.(\d+).VoiceProfile.(\d+).Line.(\d+).(SIP.AuthUserName|SIP.URI|Enable|Status)`)
 			// parso la GetParameterNamesResponse per creare la GetParameterValues multipla con le sole foglie che interessano il summary
 			for idx := range getParameterNames.ParameterList {
-				// looking for WAN
-				re := regexp.MustCompile(`InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.(\d+).(Name|ExternalIPAddress|Enable|ConnectionTrigger|AddressingType|DefaultGateway|ConnectionType|ConnectionStatus)`)
-				match := re.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
+				// looking for WAN IPConnection
+				// InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.2.DefaultGateway
+				match := re_wan_ip.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
 				if len(match) != 0 {
-					objectsToCheck["WAN"+match[1]] = append(objectsToCheck["WAN"+match[1]], "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection."+match[1]+"."+match[2])
+					objectsToCheck["WAN device "+match[1]+" connection "+match[2]+" IP connection "+match[3]] = append(objectsToCheck["WAN device "+match[1]+" connection "+match[2]+" IP connection "+match[3]], "InternetGatewayDevice.WANDevice."+match[1]+".WANConnectionDevice."+match[2]+".WANIPConnection."+match[3]+"."+match[4])
+				}
+
+				// looking for WAN PPPConnection
+				match = re_wan_ppp.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
+				if len(match) != 0 {
+					objectsToCheck["WAN device "+match[1]+" connection "+match[2]+" PPP connection "+match[3]] = append(objectsToCheck["WAN device "+match[1]+" connection "+match[2]+" PPP connection "+match[3]], "InternetGatewayDevice.WANDevice."+match[1]+".WANConnectionDevice."+match[2]+".WANPPPConnection."+match[3]+"."+match[4])
 				}
 
 				// looking for LAN
-				re = regexp.MustCompile(`InternetGatewayDevice.LANDevice.1.Hosts.Host.(\d+).(Active|HostName|IPAddress|MACAddress|InterfaceType)`)
-				match = re.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
+				match = re_hosts.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
 				if len(match) != 0 {
 					objectsToCheck["HOST"+match[1]] = append(objectsToCheck["HOST"+match[1]], "InternetGatewayDevice.LANDevice.1.Hosts.Host."+match[1]+"."+match[2])
 				}
 				// looking for WIFI
-				re = regexp.MustCompile(`InternetGatewayDevice.LANDevice.1.WLANConfiguration.(\d+).(SSID|Enable|Status)`)
-				match = re.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
+				match = re_wifi.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
 				if len(match) != 0 {
 					objectsToCheck["WIFI"+match[1]] = append(objectsToCheck["WIFI"+match[1]], "InternetGatewayDevice.LANDevice.1.WLANConfiguration."+match[1]+"."+match[2])
 				}
 				// looking for VOICE
-				re = regexp.MustCompile(`InternetGatewayDevice.Services.VoiceService.(\d+).VoiceProfile.(\d+).Line.(\d+).(SIP.AuthUserName|SIP.URI|Enable|Status)`)
-				match = re.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
+				match = re_voice.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
 				if len(match) != 0 {
 					objectsToCheck["VOICE "+match[1]+" profile "+match[2]+" line "+match[3]] = append(objectsToCheck["VOICE "+match[1]+" profile "+match[2]+" line "+match[3]], "InternetGatewayDevice.Services.VoiceService."+match[1]+".VoiceProfile."+match[2]+".Line."+match[3]+"."+match[4])
 				}
+
 			}
 
 			// GetParameterMultiValues
