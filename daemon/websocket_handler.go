@@ -200,6 +200,11 @@ func websocketHandler(ws *websocket.Conn) {
 					objectsToCheck["WIFI"+match[1]] = append(objectsToCheck["WIFI"+match[1]], "InternetGatewayDevice.LANDevice.1.WLANConfiguration."+match[1]+"."+match[2])
 				}
 				// looking for VOICE
+				re = regexp.MustCompile(`InternetGatewayDevice.Services.VoiceService.(\d+).VoiceProfile.(\d+).Line.(\d+).(SIP.AuthUserName|SIP.URI|Enable|Status)`)
+				match = re.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
+				if len(match) != 0 {
+					objectsToCheck["VOICE "+match[1]+" profile "+match[2]+" line "+match[3]] = append(objectsToCheck["VOICE "+match[1]+" profile "+match[2]+" line "+match[3]], "InternetGatewayDevice.Services.VoiceService."+match[1]+".VoiceProfile."+match[2]+".Line."+match[3]+"."+match[4])
+				}
 			}
 
 			// GetParameterMultiValues
