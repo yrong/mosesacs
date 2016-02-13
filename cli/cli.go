@@ -42,14 +42,14 @@ func Run(url string) {
 	contextCmds := []string{"summary"}
 
 	line.SetCompleter(func(line string) (c []string) {
-		if (strings.HasPrefix(line, "cpe ")) {
+		if strings.HasPrefix(line, "cpe ") {
 			// should return the list of cpes as second argument
 			arr := strings.Split(line, " ")
 
 			cpes := []string{"cpe1", "cpe12", "cpe3"} // TODO get cpe list via ws
 			for _, n := range cpes {
 				if strings.HasPrefix(n, strings.ToLower(arr[1])) {
-					c = append(c, arr[0] + " " + n)
+					c = append(c, arr[0]+" "+n)
 				}
 			}
 		} else {
@@ -145,11 +145,10 @@ func receiver() {
 				fmt.Println("error:", err)
 			}
 
-//			fmt.Printf("%+v",log["prova"])
+			//			fmt.Printf("%+v",log["prova"])
 			line.PrintAbovePrompt(fmt.Sprintf("%s", log["log"]))
 
 		}
-
 
 		//		fmt.Println(msg)
 		/*
@@ -196,7 +195,6 @@ func quit(url string, line *liner.State) {
 	fmt.Println("Disconnected. Bye.")
 	os.Exit(0)
 }
-
 
 func processCommand(cmd string) {
 	switch {

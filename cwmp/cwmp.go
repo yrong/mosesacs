@@ -1,13 +1,13 @@
 package cwmp
 
 import (
+	"crypto/rand"
 	"encoding/xml"
-	"strings"
-	"time"
 	"fmt"
 	"github.com/mxk/go-sqlite/sqlite3"
 	"strconv"
-	"crypto/rand"
+	"strings"
+	"time"
 )
 
 type SoapEnvelope struct {
@@ -16,7 +16,7 @@ type SoapEnvelope struct {
 	Body    SoapBody
 }
 
-type SoapHeader struct{
+type SoapHeader struct {
 	Id string `xml:"ID"`
 }
 type SoapBody struct {
@@ -48,6 +48,7 @@ type GetParameterValues_ struct {
 
 type GetParameterNames_ struct {
 	ParameterPath []string `xml:"Body>GetParameterNames>ParameterPath"`
+	NextLevel     string   `xml:"Body>GetParameterNames>NextLevel"`
 }
 
 type GetParameterValuesResponse struct {
@@ -127,12 +128,12 @@ type DeviceID struct {
 func InformResponse(mustUnderstand string) string {
 	mustUnderstandHeader := ""
 	if mustUnderstand != "" {
-		mustUnderstandHeader = `<cwmp:ID soap:mustUnderstand="1">`+mustUnderstand+`</cwmp:ID>`
+		mustUnderstandHeader = `<cwmp:ID soap:mustUnderstand="1">` + mustUnderstand + `</cwmp:ID>`
 	}
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <soap:Header>`+ mustUnderstandHeader +`</soap:Header>
+  <soap:Header>` + mustUnderstandHeader + `</soap:Header>
   <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
     <cwmp:InformResponse>
       <MaxEnvelopes>1</MaxEnvelopes>
@@ -163,11 +164,11 @@ func SetParameterValues(leaf string, value string) string {
     <cwmp:SetParameterValues>
       <ParameterList soapenc:arrayType="cwmp:ParameterValueStruct[1]">
 		  <ParameterValueStruct>
-			  <Name>`+leaf+`</Name>
-			  <Value>`+value+`</Value>
+			  <Name>` + leaf + `</Name>
+			  <Value>` + value + `</Value>
 		  </ParameterValueStruct>
       </ParameterList>
-      <ParameterKey>LC1309`+randToken()+`</ParameterKey>
+      <ParameterKey>LC1309` + randToken() + `</ParameterKey>
     </cwmp:SetParameterValues>
   </soap:Body>
 </soap:Envelope>`
@@ -185,17 +186,17 @@ func SetParameterMultiValues(data map[string]string) string {
   <soap:Header/>
   <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
     <cwmp:SetParameterValues>
-      <ParameterList soapenc:arrayType="cwmp:ParameterValueStruct[`+string(len(data))+`]">`
+      <ParameterList soapenc:arrayType="cwmp:ParameterValueStruct[` + string(len(data)) + `]">`
 
-for key,value := range data {
-	msg += `<ParameterValueStruct>
-			  <Name>`+key+`</Name>
-			  <Value>`+value+`</Value>
+	for key, value := range data {
+		msg += `<ParameterValueStruct>
+			  <Name>` + key + `</Name>
+			  <Value>` + value + `</Value>
 		  </ParameterValueStruct>`
-}
+	}
 
 	msg += `</ParameterList>
-      <ParameterKey>LC1309`+randToken()+`</ParameterKey>
+      <ParameterKey>LC1309` + randToken() + `</ParameterKey>
     </cwmp:SetParameterValues>
   </soap:Body>
 </soap:Envelope>`
@@ -203,14 +204,14 @@ for key,value := range data {
 	return msg
 }
 
-func GetParameterNames(leaf string) string {
+func GetParameterNames(leaf string, nextlevel int) string {
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <soap:Header/>
   <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
     <cwmp:GetParameterNames>
       <ParameterPath>` + leaf + `</ParameterPath>
-      <NextLevel>1</NextLevel>
+      <NextLevel>` + strconv.Itoa(nextlevel) + `</NextLevel>
     </cwmp:GetParameterNames>
   </soap:Body>
 </soap:Envelope>`
@@ -233,7 +234,7 @@ func Inform(serial string) string {
 	<soap:Body><cwmp:Inform><DeviceId><Manufacturer>ADB Broadband</Manufacturer>
 <OUI>0013C8</OUI>
 <ProductClass>VV5522</ProductClass>
-<SerialNumber>PI234550701S199991-`+ serial +`</SerialNumber>
+<SerialNumber>PI234550701S199991-` + serial + `</SerialNumber>
 </DeviceId>
 <Event soap-enc:arrayType="cwmp:EventStruct[1]">
 <EventStruct><EventCode>6 CONNECTION REQUEST</EventCode>
@@ -245,7 +246,7 @@ func Inform(serial string) string {
 <RetryCount>0</RetryCount>
 <ParameterList soap-enc:arrayType="cwmp:ParameterValueStruct[8]">
 <ParameterValueStruct><Name>InternetGatewayDevice.ManagementServer.ConnectionRequestURL</Name>
-<Value xsi:type="xsd:string">http://localhost:7547/ConnectionRequest-`+serial+`</Value>
+<Value xsi:type="xsd:string">http://localhost:7547/ConnectionRequest-` + serial + `</Value>
 </ParameterValueStruct>
 <ParameterValueStruct><Name>InternetGatewayDevice.ManagementServer.ParameterKey</Name>
 <Value xsi:type="xsd:string"></Value>
@@ -254,7 +255,7 @@ func Inform(serial string) string {
 <Value xsi:type="xsd:string">InternetGatewayDevice:1.2[](Baseline:1,EthernetLAN:1,WiFiLAN:1,ADSLWAN:1,EthernetWAN:1,QoS:1,QoSDynamicFlow:1,Bridging:1,Time:1,IPPing:1,TraceRoute:1,DeviceAssociation:1,UDPConnReq:1),VoiceService:1.0[1](TAEndpoint:1,SIPEndpoint:1)</Value>
 </ParameterValueStruct>
 <ParameterValueStruct><Name>InternetGatewayDevice.DeviceInfo.HardwareVersion</Name>
-<Value xsi:type="xsd:string">`+serial+`</Value>
+<Value xsi:type="xsd:string">` + serial + `</Value>
 </ParameterValueStruct>
 <ParameterValueStruct><Name>InternetGatewayDevice.DeviceInfo.ProvisioningCode</Name>
 <Value xsi:type="xsd:string">ABCD</Value>
@@ -283,7 +284,7 @@ func BuildGetParameterValuesResponse(serial string, leaves GetParameterValues_) 
 	n_leaves := 0
 	var temp string
 	for _, leaf := range leaves.ParameterNames {
-		sql := "select key, value, tipo from params where key like '"+leaf+"%'"
+		sql := "select key, value, tipo from params where key like '" + leaf + "%'"
 		for s, err := db.Query(sql); err == nil; err = s.Next() {
 			n_leaves++
 			var key string
@@ -291,13 +292,13 @@ func BuildGetParameterValuesResponse(serial string, leaves GetParameterValues_) 
 			var tipo string
 			s.Scan(&key, &value, &tipo)
 			temp += `<ParameterValueStruct>
-			<Name>`+key+`</Name>
-			<Value xsi:type="`+tipo+`">`+value+`</Value>
+			<Name>` + key + `</Name>
+			<Value xsi:type="` + tipo + `">` + value + `</Value>
 			</ParameterValueStruct>`
 		}
 	}
 
-	ret += `<ParameterList soap-enc:arrayType="cwmp:ParameterValueStruct[`+strconv.Itoa(n_leaves)+`]">`
+	ret += `<ParameterList soap-enc:arrayType="cwmp:ParameterValueStruct[` + strconv.Itoa(n_leaves) + `]">`
 	ret += temp
 	ret += `</ParameterList></cwmp:GetParameterValuesResponse></soap:Body></soap:Envelope>`
 
@@ -314,20 +315,34 @@ func BuildGetParameterNamesResponse(serial string, leaves GetParameterNames_) st
 	var temp string
 	for _, leaf := range leaves.ParameterPath {
 		fmt.Println(leaf)
-		sql := "select key, value, tipo from params where key like '"+leaf+"%'"
+		sql := "select key, value, tipo from params where key like '" + leaf + "%'"
 		for s, err := db.Query(sql); err == nil; err = s.Next() {
 			var key string
 			var value string
 			var tipo string
 			s.Scan(&key, &value, &tipo)
 			var sp = strings.Split(strings.Split(key, leaf)[1], ".")
-			if ! obj[sp[0]] {
-				if len(sp) > 1 {
-					obj[leaf+sp[0]+"."] = true
-				} else {
-					obj[leaf+sp[0]] = true
+			nextlevel, _ := strconv.Atoi(leaves.NextLevel)
+			if nextlevel == 0 {
+				root := leaf
+				obj[root] = true
+				for idx := range sp {
+					if idx == len(sp)-1 {
+						root = root + sp[idx]
+					} else {
+						root = root + sp[idx] + "."
+					}
+					obj[root] = true
 				}
+			} else {
+				if !obj[sp[0]] {
+					if len(sp) > 1 {
+						obj[leaf+sp[0]+"."] = true
+					} else {
+						obj[leaf+sp[0]] = true
+					}
 
+				}
 			}
 
 		}
@@ -335,7 +350,7 @@ func BuildGetParameterNamesResponse(serial string, leaves GetParameterNames_) st
 
 	for o := range obj {
 		temp += `<ParameterInfoStruct>
-				<Name>`+o+`</Name>
+				<Name>` + o + `</Name>
 				<Writable>true</Writable>
 				</ParameterInfoStruct>`
 	}
