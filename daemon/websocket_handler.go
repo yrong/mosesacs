@@ -187,7 +187,6 @@ func websocketHandler(ws *websocket.Conn) {
 				}
 
 				// looking for LAN
-				// InternetGatewayDevice.LANDevice.1.Hosts.Host.1.Active|
 				re = regexp.MustCompile(`InternetGatewayDevice.LANDevice.1.Hosts.Host.(\d+).(Active|HostName|IPAddress|MACAddress|InterfaceType)`)
 				match = re.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
 				if len(match) != 0 {
