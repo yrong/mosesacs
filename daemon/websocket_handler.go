@@ -196,8 +196,14 @@ func websocketHandler(ws *websocket.Conn) {
 				// looking for VOICE
 			}
 
-			// GetParameterValues multipla
-			req = Request{cpe, ws, cwmp.GetParameterValues(data["object"]), func(msg *WsSendMessage) error {
+			// GetParameterMultiValues
+			leaves := []string{}
+			for idx := range objectsToCheck {
+				for i := range objectsToCheck[idx] {
+					leaves = append(leaves, objectsToCheck[idx][i])
+				}
+			}
+			req = Request{cpe, ws, cwmp.GetParameterMultiValues(leaves), func(msg *WsSendMessage) error {
 				fmt.Println("sono nella callback")
 				ch <- msg
 				return nil // TODO da implementare un timeout ? boh

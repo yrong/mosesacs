@@ -156,6 +156,25 @@ func GetParameterValues(leaf string) string {
 </soap:Envelope>`
 }
 
+func GetParameterMultiValues(leaves []string) string {
+	msg := `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header/>
+  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+    <cwmp:GetParameterValues>
+      <ParameterNames>`
+
+	for idx := range leaves {
+		msg += `<string>` + leaves[idx] + `</string>`
+
+	}
+	msg += `</ParameterNames>
+    </cwmp:GetParameterValues>
+  </soap:Body>
+</soap:Envelope>`
+	return msg
+}
+
 func SetParameterValues(leaf string, value string) string {
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
