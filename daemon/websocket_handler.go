@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/lucacervasio/mosesacs/cwmp"
 	"golang.org/x/net/websocket"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -149,7 +150,54 @@ func websocketHandler(ws *websocket.Conn) {
 		} else if m == "GetSummary" {
 			cpe := data["cpe"]
 			ch := make(chan *WsSendMessage)
-			req := Request{cpe, ws, cwmp.GetParameterValues(data["object"]), func(msg *WsSendMessage) error {
+
+			// GetParameterNames per leggere la mib velocemente
+			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"], 0), func(msg *WsSendMessage) error {
+				fmt.Println("sono nella callback della GetParameterNames")
+				ch <- msg
+				return nil
+			}}
+			if _, exists := cpes[cpe]; exists {
+				cpes[cpe].Queue.Enqueue(req)
+				if cpes[cpe].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(cpe)
+				}
+			} else {
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", cpe))
+			}
+			fmt.Println("sono sospeso in attesa che ritorni il messaggio")
+			m := <-ch
+			fmt.Println("è tornato")
+			getParameterNames := new(cwmp.GetParameterNamesResponse)
+			err := json.Unmarshal(m.Data, &getParameterNames)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+
+			objectsToCheck := map[string][]string{}
+
+			// parso la GetParameterNamesResponse per creare la GetParameterValues multipla con le sole foglie che interessano il summary
+			for idx := range getParameterNames.ParameterList {
+				// looking for WAN
+				re := regexp.MustCompile(`InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.(\d+).(Name|ExternalIPAddress|Enable|ConnectionTrigger|AddressingType|DefaultGateway|ConnectionType|ConnectionStatus)`)
+				match := re.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
+				if len(match) != 0 {
+					objectsToCheck["WAN"+match[1]] = append(objectsToCheck["WAN"+match[1]], "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection."+match[1]+"."+match[2])
+				}
+
+				// looking for LAN
+				// looking for WIFI
+				re = regexp.MustCompile(`InternetGatewayDevice.LANDevice.1.WLANConfiguration.(\d+).(SSID|Enable|Status)`)
+				match = re.FindStringSubmatch(getParameterNames.ParameterList[idx].Name)
+				if len(match) != 0 {
+					objectsToCheck["WIFI"+match[1]] = append(objectsToCheck["WIFI"+match[1]], "InternetGatewayDevice.LANDevice.1.WLANConfiguration."+match[1]+"."+match[2])
+				}
+				// looking for VOICE
+			}
+
+			// GetParameterValues multipla
+			req = Request{cpe, ws, cwmp.GetParameterValues(data["object"]), func(msg *WsSendMessage) error {
 				fmt.Println("sono nella callback")
 				ch <- msg
 				return nil // TODO da implementare un timeout ? boh
@@ -165,37 +213,14 @@ func websocketHandler(ws *websocket.Conn) {
 			}
 
 			fmt.Println("sono sospeso in attesa che ritorni il messaggio")
-			m := <-ch
+			m = <-ch
 			fmt.Println("è tornato")
 
 			// qui devo parsare la response e creare il summary "semplice" da visualizzare
 			getParameterValues := new(cwmp.GetParameterValuesResponse)
-			err := json.Unmarshal(m.Data, &getParameterValues)
+			err = json.Unmarshal(m.Data, &getParameterValues)
 			if err != nil {
 				fmt.Println("error:", err)
-			}
-
-			objectsToCheck := map[string][]string{
-				"WAN": {
-					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Name",
-					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress",
-					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Enable",
-					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ConnectionTrigger",
-					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.AddressingType",
-					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.DefaultGateway",
-					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ConnectionType",
-					"InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ConnectionStatus",
-				},
-				"WIFI1": {
-					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable",
-					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Status",
-					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",
-				},
-				"WIFI2": {
-					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable",
-					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Status",
-					"InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID",
-				},
 			}
 
 			summaryObject := map[string]map[string]string{}
@@ -210,8 +235,9 @@ func websocketHandler(ws *websocket.Conn) {
 					for leafIndex := range objectsToCheck[area] {
 						leaf := objectsToCheck[area][leafIndex]
 						if objectName == leaf {
-							leafName := strings.Split(leaf, ".")
-							summaryObject[area][leafName[len(leafName)-1]] = getParameterValues.ParameterList[idx].Value
+							// leafName := strings.Split(leaf, ".")
+							// summaryObject[area][leafName[len(leafName)-1]] = getParameterValues.ParameterList[idx].Value
+							summaryObject[area][leaf] = getParameterValues.ParameterList[idx].Value
 						}
 					}
 				}
