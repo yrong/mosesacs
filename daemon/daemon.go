@@ -1,18 +1,18 @@
 package daemon
 
 import (
+	"encoding/json"
+	"encoding/xml"
+	"fmt"
 	"github.com/lucacervasio/mosesacs/cwmp"
 	"github.com/lucacervasio/mosesacs/www"
 	"github.com/oleiade/lane"
 	"golang.org/x/net/websocket"
-	"encoding/xml"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
-	"encoding/json"
 )
 
 const Version = "0.1.21"
@@ -24,11 +24,10 @@ type MosesWriter interface {
 }
 
 type BasicWriter struct {
-
 }
 
 func (w *BasicWriter) Logger(log string) {
-	fmt.Println("Free:",log)
+	fmt.Println("Free:", log)
 }
 
 type Request struct {
@@ -50,8 +49,8 @@ type CPE struct {
 	Waiting              *Request
 	HardwareVersion      string
 	LastConnection       time.Time
-	DataModel			 string
-	KeepConnectionOpen	 bool
+	DataModel            string
+	KeepConnectionOpen   bool
 }
 
 type Message struct {
@@ -128,7 +127,7 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 				ConnectionRequestURL: Inform.GetConnectionRequest(),
 				OUI:                  Inform.DeviceId.OUI,
 				Queue:                lane.NewQueue(),
-				DataModel:			  Inform.GetDataModelType(),
+				DataModel:            Inform.GetDataModelType(),
 				KeepConnectionOpen:   false}
 		}
 		obj := cpes[Inform.DeviceId.SerialNumber]
@@ -153,10 +152,10 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 	} else if messageType == "GetRPC" {
 
 	} else {
-//		if messageType == "GetParameterValuesResponse" {
-			// eseguo del parsing, invio i dati via websocket o altro
+		//		if messageType == "GetParameterValuesResponse" {
+		// eseguo del parsing, invio i dati via websocket o altro
 
-	//	} else if len == 0 {
+		//	} else if len == 0 {
 		if len == 0 {
 			// empty post
 			log.Printf("Got Empty Post")
@@ -175,9 +174,9 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 				msg.Data, _ = json.Marshal(envelope)
 
 				cpe.Waiting.Callback(msg)
-//				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
-//					fmt.Println("error while sending back answer:", err)
-//				}
+				//				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
+				//					fmt.Println("error while sending back answer:", err)
+				//				}
 
 			} else if e.KindOf() == "GetParameterValuesResponse" {
 				var envelope cwmp.GetParameterValuesResponse
@@ -188,9 +187,9 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 				msg.Data, _ = json.Marshal(envelope)
 
 				cpe.Waiting.Callback(msg)
-//				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
-//					fmt.Println("error while sending back answer:", err)
-//				}
+				//				if err := websocket.JSON.Send(cpe.Waiting.Websocket, msg); err != nil {
+				//					fmt.Println("error while sending back answer:", err)
+				//				}
 
 			} else {
 				msg := new(WsMessage)
@@ -232,6 +231,10 @@ func staticPage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, www.Index)
 }
 
+func fontsPage(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./www"+r.URL.Path)
+}
+
 func Run(port *int, logObj MosesWriter) {
 	logger = logObj
 	cpes = make(map[string]CPE)
@@ -246,6 +249,7 @@ func Run(port *int, logObj MosesWriter) {
 
 	fmt.Printf("WEB Handler installed at http://0.0.0.0:%d/www\n", *port)
 	http.HandleFunc("/www", staticPage)
+	http.HandleFunc("/fonts/", fontsPage)
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {
