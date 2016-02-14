@@ -344,7 +344,7 @@ var Index = `
                 $('#getParent').attr('leaf',name);
                 $('.mib').show();
                 $('.mib-tree').show();
-
+                $('.cpe-summary').hide().empty();
             });
 
             $(document).on('click',"#cpe_summary", function(){
