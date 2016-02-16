@@ -215,10 +215,6 @@ var Index = `
             summary = false;
             writable_array = [];
 
-            // var ws_uri = "ws://" + window.location.host + ":9292/api";
-            // var ws = new WebSocket(ws_uri);
-//            var ws = new WebSocket('ws://cwmp.mosesacs.org:9292/api');
-
             var loc = window.location;
             if (loc.protocol === "https:") {
                 new_uri = "wss:";
