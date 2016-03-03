@@ -42,6 +42,11 @@ type ParameterInfoStruct struct {
 	Writable string
 }
 
+type SetParameterValues_ struct {
+	ParameterList []ParameterValueStruct `xml:"Body>SetParameterValues>ParameterList>ParameterValueStruct"`
+	ParameterKey  string                 `xml:"Body>SetParameterValues>ParameterKey>string"`
+}
+
 type GetParameterValues_ struct {
 	ParameterNames []string `xml:"Body>GetParameterValues>ParameterNames>string"`
 }
