@@ -146,7 +146,11 @@ func receiver() {
 			}
 
 			//			fmt.Printf("%+v",log["prova"])
-			line.PrintAbovePrompt(fmt.Sprintf("%s", log["log"]))
+			if log["log"] == "ping" {
+				// received ping from daemon
+			} else {
+				line.PrintAbovePrompt(fmt.Sprintf("%s", log["log"]))
+			}
 
 		}
 
