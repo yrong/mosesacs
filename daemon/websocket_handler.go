@@ -66,7 +66,13 @@ func websocketHandler(ws *websocket.Conn) {
 			}
 
 			client.Send(response)
-
+		} else if strings.Contains(m, "setxmpp") {
+			i := strings.Split(m, " ")
+			cpes[i[1]].XmppId = i[2]
+			if len(i) == 5 {
+				cpes[i[1]].XmppUsername = i[3]
+				cpes[i[1]].XmppPassword = i[4]
+			}
 		} else if strings.Contains(m, "readMib") {
 			i := strings.Split(m, " ")
 			//			cpeSerial, _ := strconv.Atoi(i[1])

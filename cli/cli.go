@@ -38,7 +38,7 @@ func Run(url string) {
 		}
 	}()
 
-	baseCmds := []string{"exit", "help", "version", "list", "status", "shutdown", "uptime", "readMib", "writeMib", "GetParameterNames"}
+	baseCmds := []string{"exit", "help", "version", "list", "status", "shutdown", "uptime", "readMib", "writeMib", "GetParameterNames", "set"}
 	contextCmds := []string{"summary"}
 
 	line.SetCompleter(func(line string) (c []string) {
@@ -214,6 +214,8 @@ func processCommand(cmd string) {
 		client.Write("list")
 	case strings.Contains(cmd, "status"):
 		client.Write("status")
+	case strings.Contains(cmd, "setxmpp"):
+		client.Write(cmd)
 	default:
 		fmt.Println("Unknown command")
 	}
