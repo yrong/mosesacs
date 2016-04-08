@@ -103,7 +103,7 @@ func StartClient(user string, pwd string, cb func(string)) {
 }
 
 func SendConnectionRequest(cpe, username, password string) {
-	outmsg := `<iq from="acs@mosesacs.org" to="` + cpe + `" id="cr001" type="get"><connectionRequest xmlns="urn:broadband-forum-org:cwmp:xmppConnReq-1-0"><username>`+username+`</username><password>`+password+`</password></connectionRequest></iq>`
+	outmsg := `<iq from="acs@mosesacs.org" to="` + cpe + `" id="cr001" type="get"><connectionRequest xmlns="urn:broadband-forum-org:cwmp:xmppConnReq-1-0"><username>` + username + `</username><password>` + password + `</password></connectionRequest></iq>`
 	dec := xml.NewDecoder(strings.NewReader(outmsg))
 	var stan xmpp.Stanza
 	stan = &xmpp.Iq{}

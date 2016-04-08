@@ -1,8 +1,8 @@
 package daemon
 
 import (
-	"golang.org/x/net/websocket"
 	"fmt"
+	"golang.org/x/net/websocket"
 	"time"
 	//	"github.com/lucacervasio/mosesacs/client"
 	"encoding/json"

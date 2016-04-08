@@ -1,13 +1,13 @@
 package cwmp
 
 import (
-  "testing"
+	"testing"
 )
 
 func TestInformParsing(t *testing.T) {
-  inform := `blabla`
+	inform := `blabla`
 
-  if inform != "blabla" {
-    t.Errorf("Inform can't parse")
-  }
+	if inform != "blabla" {
+		t.Errorf("Inform can't parse")
+	}
 }

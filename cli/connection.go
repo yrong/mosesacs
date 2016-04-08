@@ -1,12 +1,12 @@
 package client
 
 import (
-	"golang.org/x/net/websocket"
 	"fmt"
+	"golang.org/x/net/websocket"
 	"os"
 	//	"strings"
-	"github.com/lucacervasio/mosesacs/daemon"
 	"encoding/json"
+	"github.com/lucacervasio/mosesacs/daemon"
 )
 
 type Connection struct {
@@ -73,7 +73,7 @@ func (conn *Connection) Write(cmd string) {
 func (conn *Connection) SendSyncCommand(cmd string) *daemon.WsSendMessage {
 	ch := make(chan *daemon.WsSendMessage)
 	conn.Write(cmd)
-	m := <- ch
+	m := <-ch
 
 	return m
 }
