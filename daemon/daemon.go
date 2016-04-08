@@ -19,6 +19,7 @@ import (
 const Version = "0.2.0"
 
 var logger MosesWriter
+var xmppGlobalUser string
 
 type MosesWriter interface {
 	Logger(string)
@@ -140,7 +141,7 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents())
 		log.Printf("Soap envelope has mustUnderstand %s\n", envelope.Header.Id)
-		logger.Logger("ciao")
+//		logger.Logger("ciao")
 		sendAll(fmt.Sprintf("Received an Inform from %s (%d bytes) with SerialNumber %s and EventCodes %s", addr, len, Inform.DeviceId.SerialNumber, Inform.GetEvents()))
 
 		expiration := time.Now().AddDate(0, 0, 1) // expires in 1 day
@@ -228,8 +229,10 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 func doConnectionRequest(SerialNumber string) {
 	fmt.Println("issuing a connection request to CPE", SerialNumber)
 	if cpes[SerialNumber].XmppId != "" {
-		xmpp.SendConnectionRequest(cpes[SerialNumber].XmppId, cpes[SerialNumber].XmppUsername, cpes[SerialNumber].XmppPassword)
+		fmt.Println("cr via xmpp")
+		xmpp.SendConnectionRequest(cpes[SerialNumber].XmppId, cpes[SerialNumber].XmppUsername, cpes[SerialNumber].XmppPassword, xmppGlobalUser)
 	} else {
+		fmt.Println("cr via http")
 		Auth("user", "pass", cpes[SerialNumber].ConnectionRequestURL)
 	}
 }
@@ -243,6 +246,7 @@ func fontsPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func Run(port *int, logObj MosesWriter, xmppUser, xmppPass string) {
+	xmppGlobalUser = xmppUser
 	logger = logObj
 	cpes = make(map[string]CPE)
 	sessions = make(map[string]*CPE)

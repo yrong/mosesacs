@@ -248,9 +248,9 @@ func websocketHandler(ws *websocket.Conn) {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", cpe))
 			}
 
-			fmt.Println("sono sospeso in attesa che ritorni il messaggio")
+			fmt.Println("i'm waiting for the message to be back")
 			m = <-ch
-			fmt.Println("è tornato")
+			fmt.Println("it's back")
 
 			// qui devo parsare la response e creare il summary "semplice" da visualizzare
 			getParameterValues := new(cwmp.GetParameterValuesResponse)
