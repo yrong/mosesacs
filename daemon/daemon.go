@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/lucacervasio/mosesacs/cwmp"
 	"github.com/lucacervasio/mosesacs/www"
+	"github.com/lucacervasio/mosesacs/xmpp"
 	"github.com/oleiade/lane"
 	"golang.org/x/net/websocket"
 	"io/ioutil"
@@ -13,7 +14,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-	"github.com/lucacervasio/mosesacs/xmpp"
 )
 
 const Version = "0.2.0"
@@ -43,6 +43,9 @@ type CPE struct {
 	Manufacturer         string
 	OUI                  string
 	ConnectionRequestURL string
+	XmppId               string
+	XmppUsername         string
+	XmppPassword         string
 	SoftwareVersion      string
 	ExternalIPAddress    string
 	State                string
@@ -225,7 +228,11 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 func doConnectionRequest(SerialNumber string) {
 	fmt.Println("issuing a connection request to CPE", SerialNumber)
 	//	http.Get(cpes[SerialNumber].ConnectionRequestURL)
-	Auth("user", "pass", cpes[SerialNumber].ConnectionRequestURL)
+	if cpes[SerialNumber].XmppId != "" {
+		xmpp.SendConnectionRequest(cpes[SerialNumber].XmppId, cpes[SerialNumber].XmppUsername, cpes[SerialNumber].XmppPassword)
+	} else {
+		Auth("user", "pass", cpes[SerialNumber].ConnectionRequestURL)
+	}
 }
 
 func staticPage(w http.ResponseWriter, r *http.Request) {
