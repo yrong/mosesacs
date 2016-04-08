@@ -227,7 +227,6 @@ func CwmpHandler(w http.ResponseWriter, r *http.Request) {
 
 func doConnectionRequest(SerialNumber string) {
 	fmt.Println("issuing a connection request to CPE", SerialNumber)
-	//	http.Get(cpes[SerialNumber].ConnectionRequestURL)
 	if cpes[SerialNumber].XmppId != "" {
 		xmpp.SendConnectionRequest(cpes[SerialNumber].XmppId, cpes[SerialNumber].XmppUsername, cpes[SerialNumber].XmppPassword)
 	} else {
