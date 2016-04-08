@@ -68,10 +68,16 @@ func websocketHandler(ws *websocket.Conn) {
 			client.Send(response)
 		} else if strings.Contains(m, "setxmpp") {
 			i := strings.Split(m, " ")
-			cpes[i[1]].XmppId = i[2]
-			if len(i) == 5 {
-				cpes[i[1]].XmppUsername = i[3]
-				cpes[i[1]].XmppPassword = i[4]
+			if _, exists := cpes[i[1]]; exists {
+				c := cpes[i[1]]
+				c.XmppId = i[2]
+				if len(i) == 5 {
+					c.XmppUsername = i[3]
+					c.XmppPassword = i[4]
+				}
+				cpes[i[1]] = c
+			} else {
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
 			}
 		} else if strings.Contains(m, "readMib") {
 			i := strings.Split(m, " ")
@@ -326,7 +332,7 @@ func periodicWsChecker(c *Client, quit chan bool) {
 	for {
 		select {
 		case <-ticker.C:
-			fmt.Println("new tick on client:", c)
+//			fmt.Println("new tick on client:", c)
 			c.Send("ping")
 		case <-quit:
 			fmt.Println("received quit command for periodicWsChecker")
