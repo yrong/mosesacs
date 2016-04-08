@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/xml"
 	"fmt"
-	"github.com/mxk/go-sqlite/sqlite3"
+//	"github.com/mxk/go-sqlite/sqlite3"
 	"strconv"
 	"strings"
 	"time"
@@ -298,6 +298,7 @@ func Inform(serial string) string {
 </soap:Body></soap:Envelope>`
 }
 
+/*
 func BuildGetParameterValuesResponse(serial string, leaves GetParameterValues_) string {
 	ret := `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap-enc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0">
 	<soap:Header><cwmp:ID soap:mustUnderstand="1">3</cwmp:ID></soap:Header>
@@ -386,3 +387,4 @@ func BuildGetParameterNamesResponse(serial string, leaves GetParameterNames_) st
 
 	return ret
 }
+*/
