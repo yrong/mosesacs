@@ -15,6 +15,8 @@ func main() {
 	flVersion := flag.Bool("v", false, "Version")
 	flHelp := flag.Bool("h", false, "Help")
 	flUrl := flag.String("u", "localhost:9292", "Url to connect")
+	flXmppUser := flag.String("xmpp-user", "", "Xmpp Username")
+	flXmppPassword := flag.String("xmpp-pass", "", "Xmpp Password")
 	flag.Parse()
 
 	fmt.Printf("MosesACS %s by Luca Cervasio <luca.cervasio@gmail.com> (C)2014-2016 http://mosesacs.org\n", daemon.Version)
@@ -30,7 +32,7 @@ func main() {
 
 	if *flDaemon {
 		logger := daemon.BasicWriter{}
-		daemon.Run(port, &logger)
+		daemon.Run(port, &logger, *flXmppUser, *flXmppPassword)
 	} else {
 		client.Run(*flUrl)
 	}

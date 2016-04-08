@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"github.com/lucacervasio/mosesacs/xmpp"
 )
 
 const Version = "0.2.0"
@@ -235,7 +236,7 @@ func fontsPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./www"+r.URL.Path)
 }
 
-func Run(port *int, logObj MosesWriter) {
+func Run(port *int, logObj MosesWriter, xmppUser, xmppPass string) {
 	logger = logObj
 	cpes = make(map[string]CPE)
 	sessions = make(map[string]*CPE)
@@ -250,6 +251,14 @@ func Run(port *int, logObj MosesWriter) {
 	fmt.Printf("WEB Handler installed at http://0.0.0.0:%d/www\n", *port)
 	http.HandleFunc("/www", staticPage)
 	http.HandleFunc("/fonts/", fontsPage)
+
+	if xmppUser != "" {
+		// starting xmpp client
+		xmpp.StartClient(xmppUser, xmppPass, func(str string) {
+			log.Println(str)
+		})
+		defer xmpp.Close()
+	}
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {
