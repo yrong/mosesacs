@@ -47,7 +47,6 @@ func (conn *Connection) read() {
 		} else {
 			conn.Incoming <- msg
 		}
-
 	}
 }
 
