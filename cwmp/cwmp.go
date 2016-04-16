@@ -251,6 +251,67 @@ func FactoryReset() string {
 </soap:Envelope>`
 }
 
+func InstallDU(url, uuid, username, password, executionEnvRef string) string {
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header/>
+  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+	<cmwp:ChangeDUState>
+		<Operations>
+			<InstallOpStruct>
+				<URL>`+url+`</URL>
+				<UUID>`+uuid+`</UUID>
+				<Username>`+username+`</Username>
+				<Password>`+password+`</Password>
+				<ExecutionEnvRef>`+executionEnvRef+`</ExecutionEnvRef>
+			</InstallOpStruct>
+		</Operations>
+		<CommandKey></CommandKey>
+	</cmwp:ChangeDUState>
+  </soap:Body>
+</soap:Envelope>`
+}
+
+func UpdateDU(url, uuid, username, password, version string) string {
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header/>
+  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+	<cmwp:ChangeDUState>
+		<Operations>
+			<UpdateOpStruct>
+				<UUID>`+uuid+`</UUID>
+				<Version>`+uuid+`</Version>
+				<URL>`+url+`</URL>
+				<Username>`+username+`</Username>
+				<Password>`+password+`</Password>
+			</UpdateOpStruct>
+		</Operations>
+		<CommandKey></CommandKey>
+	</cmwp:ChangeDUState>
+  </soap:Body>
+</soap:Envelope>`
+}
+
+func UninstallDU(uuid, version, executionEnvRef string) string {
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header/>
+  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+	<cmwp:ChangeDUState>
+		<Operations>
+			<UninstallOpStruct>
+				<UUID>`+uuid+`</UUID>
+				<Version>`+uuid+`</Version>
+				<ExecutionEnvRef>`+executionEnvRef+`</ExecutionEnvRef>
+			</UninstallOpStruct>
+		</Operations>
+		<CommandKey></CommandKey>
+	</cmwp:ChangeDUState>
+  </soap:Body>
+</soap:Envelope>`
+}
+
 // CPE side
 
 func Inform(serial string) string {
