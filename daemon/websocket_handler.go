@@ -39,7 +39,7 @@ func websocketHandler(ws *websocket.Conn) {
 		}
 
 		m := data["command"]
-		fmt.Println(m)
+//		fmt.Println(m)
 
 		if m == "list" {
 
@@ -79,6 +79,36 @@ func websocketHandler(ws *websocket.Conn) {
 			} else {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
 			}
+		} else if strings.Contains(m, "changeDuState") {
+			i := strings.Split(m, " ")
+
+			var changeDuMsg string
+			if i[2] == "install" {
+				changeDuMsg = cwmp.InstallDU("aa", "bb", "cc", "dd", "ee")
+			} else if i[2] == "update" {
+				changeDuMsg = cwmp.UpdateDU("aa", "bb", "cc", "dd", "ee")
+			} else if i[2] == "uninstall "{
+				changeDuMsg = cwmp.UninstallDU("aa", "bb", "cc")
+			}
+
+			req := Request{i[1], ws, changeDuMsg, func(msg *WsSendMessage) error {
+				if err := websocket.JSON.Send(ws, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+				return err
+			}}
+
+			if _, exists := cpes[i[1]]; exists {
+				cpes[i[1]].Queue.Enqueue(req)
+				if cpes[i[1]].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(i[1])
+				}
+			} else {
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
+			}
+
 		} else if strings.Contains(m, "readMib") {
 			i := strings.Split(m, " ")
 			//			cpeSerial, _ := strconv.Atoi(i[1])
