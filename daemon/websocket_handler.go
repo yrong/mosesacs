@@ -84,11 +84,11 @@ func websocketHandler(ws *websocket.Conn) {
 
 			var changeDuMsg string
 			if i[2] == "install" {
-				changeDuMsg = cwmp.InstallDU("aa", "bb", "cc", "dd", "ee")
+				changeDuMsg = cwmp.InstallDU(i[3], i[4], i[5], i[6], i[7])
 			} else if i[2] == "update" {
-				changeDuMsg = cwmp.UpdateDU("aa", "bb", "cc", "dd", "ee")
+				changeDuMsg = cwmp.UpdateDU(i[3], i[4], i[5], i[6], i[7])
 			} else if i[2] == "uninstall "{
-				changeDuMsg = cwmp.UninstallDU("aa", "bb", "cc")
+				changeDuMsg = cwmp.UninstallDU(i[3], i[4], i[5])
 			}
 
 			req := Request{i[1], ws, changeDuMsg, func(msg *WsSendMessage) error {
