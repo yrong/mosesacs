@@ -31,15 +31,14 @@ func websocketHandler(ws *websocket.Conn) {
 			break
 		}
 
-		data := make(map[string]string)
+		data := make(map[string]interface{})
 		err = json.Unmarshal(msg.Data, &data)
 
 		if err != nil {
 			fmt.Println("error:", err)
 		}
 
-		m := data["command"]
-//		fmt.Println(m)
+		m := data["command"].(string)
 
 		if m == "list" {
 
@@ -82,16 +81,26 @@ func websocketHandler(ws *websocket.Conn) {
 		} else if strings.Contains(m, "changeDuState") {
 			i := strings.Split(m, " ")
 
-			var changeDuMsg string
-			if i[2] == "install" {
-				changeDuMsg = cwmp.InstallDU(i[3], i[4], i[5], i[6], i[7])
-			} else if i[2] == "update" {
-				changeDuMsg = cwmp.UpdateDU(i[3], i[4], i[5], i[6], i[7])
-			} else if i[2] == "uninstall "{
-				changeDuMsg = cwmp.UninstallDU(i[3], i[4], i[5])
-			}
+			ops := data["ops"].([]interface{})
 
-			req := Request{i[1], ws, changeDuMsg, func(msg *WsSendMessage) error {
+			var operations []fmt.Stringer
+			for _, obj := range ops {
+				op := obj.(map[string]interface{})
+				fmt.Println(op)
+				type_cmd := op["type"].(string)
+				if type_cmd == "install" {
+					install_op := &cwmp.InstallOpStruct{Url: op["url"].(string), Uuid: op["uuid"].(string), Username: op["username"].(string), Password: op["password"].(string), ExecutionEnvironment: op["environment"].(string)}
+					operations = append(operations, install_op)
+				} else if type_cmd == "update" {
+					update_op := &cwmp.UpdateOpStruct{Url: op["url"].(string), Uuid: op["uuid"].(string), Username: op["username"].(string), Password: op["password"].(string), Version: op["version"].(string)}
+					operations = append(operations, update_op)
+				} else if type_cmd == "uninstall" {
+					uninstall_op := &cwmp.UninstallOpStruct{Version: op["version"].(string), Uuid: op["uuid"].(string), ExecutionEnvironment: op["environment"].(string)}
+					operations = append(operations, uninstall_op)
+				}
+ 			}
+
+			req := Request{i[1], ws, cwmp.ChangeDuState(operations), func(msg *WsSendMessage) error {
 				if err := websocket.JSON.Send(ws, msg); err != nil {
 					fmt.Println("error while sending back answer:", err)
 				}
@@ -172,8 +181,8 @@ func websocketHandler(ws *websocket.Conn) {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
 			}
 		} else if m == "GetParameterValues" {
-			cpe := data["cpe"]
-			req := Request{cpe, ws, cwmp.GetParameterValues(data["object"]), func(msg *WsSendMessage) error {
+			cpe := data["cpe"].(string)
+			req := Request{cpe, ws, cwmp.GetParameterValues(data["object"].(string)), func(msg *WsSendMessage) error {
 				if err := websocket.JSON.Send(ws, msg); err != nil {
 					fmt.Println("error while sending back answer:", err)
 				}
@@ -190,11 +199,11 @@ func websocketHandler(ws *websocket.Conn) {
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", cpe))
 			}
 		} else if m == "GetSummary" {
-			cpe := data["cpe"]
+			cpe := data["cpe"].(string)
 			ch := make(chan *WsSendMessage)
 
 			// GetParameterNames per leggere la mib velocemente
-			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"], 0), func(msg *WsSendMessage) error {
+			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"].(string), 0), func(msg *WsSendMessage) error {
 				fmt.Println("sono nella callback della GetParameterNames")
 				ch <- msg
 				return nil
@@ -322,8 +331,8 @@ func websocketHandler(ws *websocket.Conn) {
 			}
 
 		} else if m == "getMib" {
-			cpe := data["cpe"]
-			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"], 1), func(msg *WsSendMessage) error {
+			cpe := data["cpe"].(string)
+			req := Request{cpe, ws, cwmp.GetParameterNames(data["object"].(string), 1), func(msg *WsSendMessage) error {
 				fmt.Println("sono nella callback")
 				if err := websocket.JSON.Send(ws, msg); err != nil {
 					fmt.Println("error while sending back answer:", err)
