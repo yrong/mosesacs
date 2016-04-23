@@ -115,6 +115,9 @@ func websocketHandler(ws *websocket.Conn) {
 					go doConnectionRequest(i[1])
 				}
 			} else {
+				if err := websocket.JSON.Send(ws, map[string]string{"status": "error", "reason": fmt.Sprintf("CPE with serial %s not found", i[1])}); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
 			}
 
