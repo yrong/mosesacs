@@ -279,12 +279,12 @@ type UpdateOpStruct struct {
 
 func (op *UpdateOpStruct) String() string {
 	return `<UpdateOpStruct>
-				<UUID>`+op.Uuid+`</UUID>
-				<Version>`+op.Version+`</Version>
-				<URL>`+op.Url+`</URL>
-				<Username>`+op.Username+`</Username>
-				<Password>`+op.Password+`</Password>
-			</UpdateOpStruct>`
+<UUID>`+op.Uuid+`</UUID>
+<Version>`+op.Version+`</Version>
+<URL>`+op.Url+`</URL>
+<Username>`+op.Username+`</Username>
+<Password>`+op.Password+`</Password>
+</UpdateOpStruct>`
 }
 
 type UninstallOpStruct struct {
@@ -295,28 +295,28 @@ type UninstallOpStruct struct {
 
 func (op *UninstallOpStruct) String() string {
 	return `<UninstallOpStruct>
-				<UUID>`+op.Uuid+`</UUID>
-				<Version>`+op.Version+`</Version>
-				<ExecutionEnvRef>`+op.ExecutionEnvironment+`</ExecutionEnvRef>
-			</UninstallOpStruct>`
+<UUID>`+op.Uuid+`</UUID>
+<Version>`+op.Version+`</Version>
+<ExecutionEnvRef>`+op.ExecutionEnvironment+`</ExecutionEnvRef>
+</UninstallOpStruct>`
 }
 
 func ChangeDuState(ops []fmt.Stringer) string {
 	ret := `<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <soap:Header/>
-  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
-	<cmwp:ChangeDUState>
-		<Operations>`
+<soap:Header/>
+<soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<cmwp:ChangeDUState>
+<Operations>`
 
 		for _,op := range ops {
 			ret += op.String()
 		}
 
 		ret += `</Operations>
-		<CommandKey></CommandKey>
-	</cmwp:ChangeDUState>
-  </soap:Body>
+<CommandKey></CommandKey>
+</cmwp:ChangeDUState>
+</soap:Body>
 </soap:Envelope>`
 
 	return ret
