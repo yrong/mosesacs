@@ -251,6 +251,87 @@ func FactoryReset() string {
 </soap:Envelope>`
 }
 
+func Download(filetype, url, username, password, filesize string) string {
+	// 3 Vendor Configuration File
+	// 1 Firmware Upgrade Image
+
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header/>
+  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+    <cwmp:Download>
+      <CommandKey>MSDWK</CommandKey>
+      <FileType>`+filetype+`</FileType>
+      <URL>`+url+`</URL>
+      <Username>`+username+`</Username>
+      <Password>`+password+`</Password>
+      <FileSize>`+filesize+`</FileSize>
+      <TargetFileName></TargetFileName>
+      <DelaySeconds>0</DelaySeconds>
+      <SuccessURL></SuccessURL>
+      <FailureURL></FailureURL>
+    </cwmp:Download>
+  </soap:Body>
+</soap:Envelope>`
+}
+
+func CancelTransfer() string {
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header/>
+  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+    <cwmp:CancelTransfer>
+      <CommandKey></CommandKey>
+    <cwmp:CancelTransfer/>
+  </soap:Body>
+</soap:Envelope>`
+}
+
+type TimeWindowStruct struct {
+	WindowStart string
+	WindowEnd string
+	WindowMode string
+	UserMessage string
+	MaxRetries string
+}
+
+func (window *TimeWindowStruct) String() string{
+	return `<TimeWindowStruct>
+<WindowStart>`+window.WindowStart+`</WindowStart>
+<WindowEnd>`+window.WindowEnd+`</WindowEnd>
+<WindowMode>`+window.WindowMode+`</WindowMode>
+<UserMessage>`+window.UserMessage+`</UserMessage>
+<MaxRetries>`+window.MaxRetries+`</MaxRetries>
+</TimeWindowStruct>`
+}
+
+func ScheduleDownload(filetype, url, username, password, filesize string, windowslist []fmt.Stringer) string {
+	ret := `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cwmp="urn:dslforum-org:cwmp-1-0" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:schemaLocation="urn:dslforum-org:cwmp-1-0 ..\schemas\wt121.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header/>
+  <soap:Body soap:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+    <cwmp:ScheduleDownload>
+      <CommandKey>MSDWK</CommandKey>
+      <FileType>`+filetype+`</FileType>
+      <URL>`+url+`</URL>
+      <Username>`+username+`</Username>
+      <Password>`+password+`</Password>
+      <FileSize>`+filesize+`</FileSize>
+      <TargetFileName></TargetFileName>
+      <TimeWindowList>`
+
+		for _,op := range windowslist {
+			ret += op.String()
+		}
+
+		ret += `</TimeWindowList>
+    </cwmp:ScheduleDownload>
+  </soap:Body>
+</soap:Envelope>`
+
+	return ret
+}
+
 type InstallOpStruct struct {
 	Url string
 	Uuid string

@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const Version = "0.2.5"
+const Version = "0.2.6"
 
 var logger MosesWriter
 var xmppGlobalUser string

@@ -120,7 +120,90 @@ func websocketHandler(ws *websocket.Conn) {
 				}
 				fmt.Println(fmt.Sprintf("CPE with serial %s not found", i[1]))
 			}
+		} else if m == "download" {
+			CpeSerial := data["serial"].(string)
 
+			req := Request{CpeSerial, ws, cwmp.Download(data["filetype"].(string), data["url"].(string),data["username"].(string),data["password"].(string),data["filesize"].(string)), func(msg *WsSendMessage) error {
+				if err := websocket.JSON.Send(ws, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+				return err
+			}}
+
+			if _, exists := cpes[CpeSerial]; exists {
+				cpes[CpeSerial].Queue.Enqueue(req)
+				if cpes[CpeSerial].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(CpeSerial)
+				}
+			} else {
+				if err := websocket.JSON.Send(ws, map[string]string{"status": "error", "reason": fmt.Sprintf("CPE with serial %s not found", CpeSerial)}); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", CpeSerial))
+			}
+		} else if strings.Contains(m, "canceltransfer") {
+			CpeSerial := data["serial"].(string)
+
+			req := Request{CpeSerial, ws, cwmp.CancelTransfer(), func(msg *WsSendMessage) error {
+				if err := websocket.JSON.Send(ws, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+				return err
+			}}
+
+			if _, exists := cpes[CpeSerial]; exists {
+				cpes[CpeSerial].Queue.Enqueue(req)
+				if cpes[CpeSerial].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(CpeSerial)
+				}
+			} else {
+				if err := websocket.JSON.Send(ws, map[string]string{"status": "error", "reason": fmt.Sprintf("CPE with serial %s not found", CpeSerial)}); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", CpeSerial))
+			}
+
+		} else if strings.Contains(m, "scheduledownload") {
+			CpeSerial := data["serial"].(string)
+
+			w := data["windows"].([]interface{})
+			var windows []fmt.Stringer
+			for _,obj := range w {
+				i := obj.(map[string]interface{})
+				wdw := &cwmp.TimeWindowStruct{
+					WindowStart: i["windowstart"].(string),
+					WindowEnd: i["windowend"].(string),
+					WindowMode: i["windowmode"].(string),
+					UserMessage: i["usermessage"].(string),
+					MaxRetries: i["maxretries"].(string),
+				}
+				windows = append(windows, wdw)
+			}
+
+			req := Request{CpeSerial, ws, cwmp.ScheduleDownload(data["filetype"].(string), data["url"].(string),data["username"].(string),data["password"].(string),data["filesize"].(string), windows), func(msg *WsSendMessage) error {
+				if err := websocket.JSON.Send(ws, msg); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+
+				return err
+			}}
+
+			if _, exists := cpes[CpeSerial]; exists {
+				cpes[CpeSerial].Queue.Enqueue(req)
+				if cpes[CpeSerial].State != "Connected" {
+					// issue a connection request
+					go doConnectionRequest(CpeSerial)
+				}
+			} else {
+				if err := websocket.JSON.Send(ws, map[string]string{"status": "error", "reason": fmt.Sprintf("CPE with serial %s not found", CpeSerial)}); err != nil {
+					fmt.Println("error while sending back answer:", err)
+				}
+				fmt.Println(fmt.Sprintf("CPE with serial %s not found", CpeSerial))
+			}
 		} else if strings.Contains(m, "readMib") {
 			i := strings.Split(m, " ")
 			//			cpeSerial, _ := strconv.Atoi(i[1])
