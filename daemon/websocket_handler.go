@@ -3,7 +3,7 @@ package daemon
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lucacervasio/mosesacs/cwmp"
+	"github.com/yrong/mosesacs/cwmp"
 	"golang.org/x/net/websocket"
 	"regexp"
 	"strconv"
@@ -20,7 +20,7 @@ func websocketHandler(ws *websocket.Conn) {
 	//	client.Read()
 
 	quit := make(chan bool)
-	go periodicWsChecker(&client, quit)
+	//go periodicWsChecker(&client, quit)
 
 	for {
 		var msg WsSendMessage
