@@ -1,4 +1,4 @@
-# Moses ACS [![Build Status](https://travis-ci.org/lucacervasio/mosesacs.svg?branch=master)](https://travis-ci.org/lucacervasio/mosesacs)
+# Moses ACS
 
 An ACS in Go for provisioning CPEs, suitable for test purposes or production deployment.
 
