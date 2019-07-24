@@ -6,7 +6,7 @@ An ACS in Go for provisioning CPEs, suitable for test purposes or production dep
 
 Install the package:
 
-    go get github.com/lucacervasio/mosesacs
+    go get github.com/yrong/mosesacs
 
 Run daemon:
 

@@ -19,7 +19,7 @@ func main() {
 	flXmppPassword := flag.String("xmpp-pass", "", "Xmpp Password")
 	flag.Parse()
 
-	fmt.Printf("MosesACS %s by Luca Cervasio <luca.cervasio@gmail.com> (C)2014-2016 http://mosesacs.org\n", daemon.Version)
+	fmt.Printf("MosesACS %s by Ronyang <yrong1997@gmail.com> (C)2016-2019", daemon.Version)
 
 	if *flVersion {
 		os.Exit(0)
@@ -36,4 +36,8 @@ func main() {
 	} else {
 		client.Run(*flUrl)
 	}
+
+
+
+
 }

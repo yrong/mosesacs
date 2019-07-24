@@ -6,7 +6,7 @@ import (
 	"os"
 	//	"strings"
 	"encoding/json"
-	"github.com/lucacervasio/mosesacs/daemon"
+	"github.com/yrong/mosesacs/daemon"
 )
 
 type Connection struct {

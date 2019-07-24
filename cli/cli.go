@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	//	"encoding/xml"
 	"fmt"
-	"github.com/lucacervasio/liner"
+	"github.com/peterh/liner"
 	"github.com/yrong/mosesacs/cwmp"
 	"github.com/yrong/mosesacs/daemon"
 	"os"
@@ -20,10 +20,12 @@ func Run(url string) {
 	line = liner.NewLiner()
 	defer line.Close()
 
-	client.Start(fmt.Sprintf("ws://%s/api", url))
-	defer client.Close()
 
-	fmt.Printf("Connected to MosesACS @ws://%s/api\n", url)
+	//fmt.Printf("Connected to MosesACS @ws://%s/api\n", url)
+	defer client.Close()
+	line.SetCtrlCAborts(true)
+
+	client.Start(fmt.Sprintf("ws://%s/api", url))
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -71,16 +73,16 @@ func Run(url string) {
 		return
 	})
 
-	if f, err := os.Open(fmt.Sprintf(os.ExpandEnv("$HOME")+"/.moses@%s.history", url)); err == nil {
-		line.ReadHistory(f)
-		f.Close()
-	}
+	//if f, err := os.Open(fmt.Sprintf(os.ExpandEnv("$HOME")+"/.moses@%s.history", url)); err == nil {
+	//	line.ReadHistory(f)
+	//	f.Close()
+	//}
 
 	go receiver()
 	context = ""
 
 	for {
-		if cmd, err := line.Prompt(fmt.Sprintf("moses@%s/%s> ", url, context)); err != nil {
+		if cmd, err := line.Prompt("moses@/>"); err != nil {
 			fmt.Println("Error reading line: ", err)
 		} else {
 			// add to history
@@ -112,9 +114,9 @@ func receiver() {
 				fmt.Println("error:", err)
 			}
 
-			line.PrintAbovePrompt("cpe list")
+			line.Prompt("cpe list")
 			for key, value := range cpes.CPES {
-				line.PrintAbovePrompt(fmt.Sprintf("CPE %s with OUI %s", key, value.OUI))
+				line.Prompt(fmt.Sprintf("CPE %s with OUI %s", key, value.OUI))
 			}
 		case "GetParameterNamesResponse":
 			getParameterNames := new(cwmp.GetParameterNamesResponse)
@@ -124,7 +126,7 @@ func receiver() {
 			}
 			//			fmt.Println(getParameterNames.ParameterList)
 			for idx := range getParameterNames.ParameterList {
-				line.PrintAbovePrompt(fmt.Sprintf("%s : %s", getParameterNames.ParameterList[idx].Name, getParameterNames.ParameterList[idx].Writable))
+				line.Prompt(fmt.Sprintf("%s : %s", getParameterNames.ParameterList[idx].Name, getParameterNames.ParameterList[idx].Writable))
 			}
 		case "GetParameterValuesResponse":
 			getParameterValues := new(cwmp.GetParameterValuesResponse)
@@ -133,10 +135,10 @@ func receiver() {
 				fmt.Println("error:", err)
 			}
 			for idx := range getParameterValues.ParameterList {
-				line.PrintAbovePrompt(fmt.Sprintf("%s : %s", getParameterValues.ParameterList[idx].Name, getParameterValues.ParameterList[idx].Value))
+				line.Prompt(fmt.Sprintf("%s : %s", getParameterValues.ParameterList[idx].Name, getParameterValues.ParameterList[idx].Value))
 			}
 		case "SetParameterValuesResponse":
-			line.PrintAbovePrompt(fmt.Sprintf("got SetParameterValuesResponse"))
+			line.Prompt(fmt.Sprintf("got SetParameterValuesResponse"))
 		case "log":
 			log := make(map[string]string)
 			err := json.Unmarshal(msg.Data, &log)
@@ -148,7 +150,7 @@ func receiver() {
 			if log["log"] == "ping" {
 				// received ping from daemon
 			} else {
-				line.PrintAbovePrompt(fmt.Sprintf("%s", log["log"]))
+				line.Prompt(fmt.Sprintf("%s", log["log"]))
 			}
 
 		}
@@ -163,26 +165,26 @@ func receiver() {
 				xml.Unmarshal([]byte(msg), &envelope)
 
 				for idx := range envelope.ParameterList {
-					line.PrintAbovePrompt(string(fmt.Sprintf("%s : %s", envelope.ParameterList[idx].Name, envelope.ParameterList[idx].Value)))
+					line.Prompt(string(fmt.Sprintf("%s : %s", envelope.ParameterList[idx].Name, envelope.ParameterList[idx].Value)))
 				}
 
 			} else if e.KindOf() == "GetParameterNamesResponse" {
-				line.PrintAbovePrompt(string(msg))
+				line.Prompt(string(msg))
 
 				var envelope cwmp.GetParameterNamesResponse
 				xml.Unmarshal([]byte(msg), &envelope)
 
 				for idx := range envelope.ParameterList {
-					line.PrintAbovePrompt(string(fmt.Sprintf("%s : %s", envelope.ParameterList[idx].Name, envelope.ParameterList[idx].Writable)))
+					line.Prompt(string(fmt.Sprintf("%s : %s", envelope.ParameterList[idx].Name, envelope.ParameterList[idx].Writable)))
 				}
 
 			} else {
-				line.PrintAbovePrompt(string(msg))
+				line.Prompt(string(msg))
 
 			}
 
 		*/
-		//		line.PrintAbovePrompt(msg.MsgType)
+		//		line.Prompt(msg.MsgType)
 	}
 }
 
